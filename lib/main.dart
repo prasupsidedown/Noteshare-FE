@@ -11,8 +11,9 @@ import 'pages/profile_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
-    url: 'https://scwuneimnrqrkhvfoshu.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjd3VuZWltbnJxcmtodmZvc2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxOTg2NDgsImV4cCI6MjA5Mjc3NDY0OH0.jjExPEMo4cJBD21pe-tntx-ROfZ1Y6j-co6QuxEkWLs', // Ganti dengan anon key kamu
+    url: 'https://dbkowlazgxdcqqjrvlhh.supabase.co',
+    anonKey:
+        'sb_publishable_DL2D_EemJofCFkONb7_mHg_cAYbHfLZ', // Ganti dengan anon key kamu
   );
   runApp(const NoteshareApp());
 }
@@ -41,10 +42,55 @@ class NoteshareApp extends StatelessWidget {
           unselectedItemColor: Colors.grey,
         ),
       ),
-      home: StreamBuilder(
+      home: StreamBuilder<AuthState>(
         stream: Supabase.instance.client.auth.onAuthStateChange,
         builder: (context, snapshot) {
-          final session = Supabase.instance.client.auth.currentSession;
+          // Jika sedang loading, tampilkan splash screen
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A5F),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.book,
+                        size: 45,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'NOTESHARE',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E3A5F),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF1E3A5F),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // Cek session dari event atau currentSession
+          final session =
+              snapshot.data?.session ??
+              Supabase.instance.client.auth.currentSession;
+
           if (session != null) {
             return const MainWrapper();
           } else {
@@ -66,7 +112,7 @@ class MainWrapper extends StatefulWidget {
 
 class _MainWrapperState extends State<MainWrapper> {
   int _currentIndex = 0;
-  
+
   final List<Widget> _pages = [
     const HomePage(),
     const SearchPage(),
@@ -86,7 +132,10 @@ class _MainWrapperState extends State<MainWrapper> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Cari'),
           BottomNavigationBarItem(icon: Icon(Icons.upload), label: 'Upload'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifikasi'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'Notifikasi',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
