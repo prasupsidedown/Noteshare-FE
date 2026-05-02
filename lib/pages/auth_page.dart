@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'splash_page.dart';
+import 'dashboard_page.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -25,6 +25,7 @@ class _AuthPageState extends State<AuthPage> {
   final TextEditingController _registerConfirmPasswordController =
       TextEditingController();
 
+  // Validasi email standar (bukan .ac.id)
   static final RegExp _emailRegExp = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
@@ -32,22 +33,40 @@ class _AuthPageState extends State<AuthPage> {
   String _loginError = '';
   String _registerError = '';
 
+  // ========== LOGIN ==========
   Future<void> _handleLogin() async {
     setState(() {
       _isLoading = true;
       _loginError = '';
     });
 
+    final email = _loginEmailController.text.trim();
+    final password = _loginPasswordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _loginError = 'Email dan password harus diisi';
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
     try {
       final response = await Supabase.instance.client.auth.signInWithPassword(
-        email: _loginEmailController.text.trim(),
-        password: _loginPasswordController.text.trim(),
+        email: email,
+        password: password,
       );
 
       debugPrint('Login berhasil: ${response.user?.email}');
-      debugPrint(
-        'User email_confirmed: ${response.user?.userMetadata?['email_confirmed']}',
-      );
+      
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
+        );
+      }
     } on AuthApiException catch (e) {
       if (mounted) {
         final errorMessage = e.message ?? e.toString();
@@ -79,20 +98,28 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
+  // ========== REGISTER (TANPA validasi .ac.id) ==========
   Future<void> _handleRegister() async {
     setState(() {
       _isLoading = true;
       _registerError = '';
     });
 
-    if (_registerNameController.text.trim().isEmpty) {
+    final name = _registerNameController.text.trim();
+    final email = _registerEmailController.text.trim();
+    final password = _registerPasswordController.text.trim();
+    final confirmPassword = _registerConfirmPasswordController.text.trim();
+
+    // Validasi Nama
+    if (name.isEmpty) {
       if (mounted) {
         setState(() => _registerError = 'Nama lengkap harus diisi');
         setState(() => _isLoading = false);
       }
       return;
     }
-    final email = _registerEmailController.text.trim();
+    
+    // Validasi Email (standar, TIDAK .ac.id)
     if (!_emailRegExp.hasMatch(email)) {
       if (mounted) {
         setState(() => _registerError = 'Masukkan email yang valid');
@@ -100,15 +127,18 @@ class _AuthPageState extends State<AuthPage> {
       }
       return;
     }
-    if (_registerPasswordController.text.length < 8) {
+    
+    // Validasi Password (minimal 6 karakter, lebih fleksibel)
+    if (password.length < 6) {
       if (mounted) {
-        setState(() => _registerError = 'Password minimal 8 karakter');
+        setState(() => _registerError = 'Password minimal 6 karakter');
         setState(() => _isLoading = false);
       }
       return;
     }
-    if (_registerPasswordController.text !=
-        _registerConfirmPasswordController.text) {
+    
+    // Validasi Konfirmasi Password
+    if (password != confirmPassword) {
       if (mounted) {
         setState(() => _registerError = 'Konfirmasi password tidak cocok');
         setState(() => _isLoading = false);
@@ -119,8 +149,8 @@ class _AuthPageState extends State<AuthPage> {
     try {
       final response = await Supabase.instance.client.auth.signUp(
         email: email,
-        password: _registerPasswordController.text.trim(),
-        data: {'full_name': _registerNameController.text.trim()},
+        password: password,
+        data: {'full_name': name},
       );
 
       debugPrint('Registrasi berhasil: ${response.user?.email}');
@@ -135,6 +165,10 @@ class _AuthPageState extends State<AuthPage> {
               content: Text('Pendaftaran berhasil! Anda masuk otomatis.'),
             ),
           );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardPage()),
+          );
         } else {
           debugPrint('Email verification required');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -144,16 +178,15 @@ class _AuthPageState extends State<AuthPage> {
               ),
             ),
           );
+          setState(() {
+            _isLogin = true;
+            _registerEmailController.clear();
+            _registerPasswordController.clear();
+            _registerConfirmPasswordController.clear();
+            _registerNameController.clear();
+            _registerError = '';
+          });
         }
-
-        setState(() {
-          _isLogin = true;
-          _registerEmailController.clear();
-          _registerPasswordController.clear();
-          _registerConfirmPasswordController.clear();
-          _registerNameController.clear();
-          _registerError = '';
-        });
       }
     } on AuthApiException catch (e) {
       if (mounted) {
@@ -208,6 +241,7 @@ class _AuthPageState extends State<AuthPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Logo
                 Container(
                   width: 80,
                   height: 80,
@@ -228,6 +262,7 @@ class _AuthPageState extends State<AuthPage> {
                 ),
                 const SizedBox(height: 32),
 
+                // ========== LOGIN FORM ==========
                 if (_isLogin) ...[
                   const Text(
                     'Masuk ke akun Anda',
@@ -238,8 +273,8 @@ class _AuthPageState extends State<AuthPage> {
                     controller: _loginEmailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      labelText: 'Email Mahasiswa',
-                      hintText: 'email@mahasiswa.ac.id',
+                      labelText: 'Email',
+                      hintText: 'email@example.com', // Berubah jadi example.com
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -342,7 +377,10 @@ class _AuthPageState extends State<AuthPage> {
                       ),
                     ],
                   ),
-                ] else ...[
+                ] 
+                
+                // ========== REGISTER FORM ==========
+                else ...[
                   const Text(
                     'Daftar Akun Baru',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -365,7 +403,7 @@ class _AuthPageState extends State<AuthPage> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: 'Email',
-                      hintText: 'contoh@email.com',
+                      hintText: 'email@example.com', // Bebas domain apapun
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -379,7 +417,7 @@ class _AuthPageState extends State<AuthPage> {
                     obscureText: true,
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      hintText: 'Minimal 8 karakter',
+                      hintText: 'Minimal 6 karakter',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

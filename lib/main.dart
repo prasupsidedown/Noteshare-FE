@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'pages/splash_page.dart';
 import 'pages/auth_page.dart';
-import 'pages/home_page.dart';
+import 'pages/dashboard_page.dart';
 import 'pages/search_page.dart';
 import 'pages/upload_page.dart';
-import 'pages/notifications_page.dart';
+import 'pages/chatbot_page.dart';
 import 'pages/profile_page.dart';
 
 void main() async {
@@ -30,12 +30,7 @@ class NoteshareApp extends StatelessWidget {
         fontFamily: 'Poppins',
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF3F4F6),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E3A5F),
-          foregroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-        ),
+        
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           type: BottomNavigationBarType.fixed,
           selectedItemColor: Color(0xFF1E3A5F),
@@ -114,10 +109,10 @@ class _MainWrapperState extends State<MainWrapper> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    const HomePage(),
+    const DashboardPage(),
     const SearchPage(),
     const UploadPage(),
-    const NotificationsPage(),
+    const ChatbotPage(),
     const ProfilePage(),
   ];
 
@@ -125,20 +120,7 @@ class _MainWrapperState extends State<MainWrapper> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Cari'),
-          BottomNavigationBarItem(icon: Icon(Icons.upload), label: 'Upload'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifikasi',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
-        ],
-      ),
+      
     );
   }
 }

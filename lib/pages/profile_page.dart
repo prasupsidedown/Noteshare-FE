@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'splash_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,201 +10,263 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _userData;
-  bool _isLoading = true;
+  int _totalNotes = 0;
+  int _totalDownloads = 0;
+  int _totalCategories = 0;
+  int _totalSemesters = 0;
+  int _validatedFiles = 0;
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
+    _fetchStats();
   }
 
   Future<void> _fetchUserData() async {
-    setState(() => _isLoading = true);
-    try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-      
-      if (user != null) {
-        setState(() {
-          _userData = {
-            'email': user.email,
-            'full_name': user.userMetadata?['full_name'] ?? user.email?.split('@').first ?? 'User',
-            'created_at': user.createdAt,
-          };
-          _isLoading = false;
-        });
-      } else {
-        setState(() => _isLoading = false);
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      setState(() {
+        _userData = {
+          'email': user.email,
+          'name': user.userMetadata?['full_name'] ?? user.email?.split('@').first ?? 'User',
+        };
+      });
     }
   }
 
-  Future<void> _logout() async {
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Konfirmasi Logout'),
-      content: const Text('Apakah Anda yakin ingin keluar?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Batal'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Logout', style: TextStyle(color: Colors.red)),
-        ),
-      ],
-    ),
-  );
-  
-  if (confirm == true) {
-    await Supabase.instance.client.auth.signOut();
-    if (mounted) {
-      // Arahkan ke SplashPage (bukan langsung AuthPage)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const SplashPage()),
-      );
+  Future<void> _fetchStats() async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      final notes = await supabase.from('notes').select('*').eq('user_id', user.id);
+      
+      // Hitung semester unik
+      Set<String> semesters = {};
+      for (var note in notes) {
+        semesters.add(note['semester'] ?? 'Semester 1');
+      }
+      
+      setState(() {
+        _totalNotes = notes.length;
+        _totalCategories = 8; // Contoh data
+        _totalSemesters = semesters.length;
+        _totalDownloads = 128;
+        _validatedFiles = _totalNotes;
+      });
     }
   }
-}
+
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Fitur sedang dalam pengembangan')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final String userName = _userData?['full_name'] ?? 'User';
-    final String userEmail = _userData?['email'] ?? 'email@example.com';
+    final String userName = _userData?['name'] ?? 'User';
+    final String userEmail = _userData?['email'] ?? 'user@example.com';
     final String firstLetter = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil'),
-        centerTitle: true,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _fetchUserData,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Avatar
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A5F),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          firstLetter,
-                          style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold),
+      body: Column(
+        children: [
+          // Header melengkung
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),  // ← lebih kecil
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(25),
+              bottomRight: Radius.circular(25),
+            ),
+          ),
+          child: const Text(
+            'Profil',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+          // Konten Profil
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // Avatar & Info
+                  Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              firstLetter,
+                              style: const TextStyle(
+                                fontSize: 40,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          userName,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          userEmail,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'Mahasiswa Aktif',
+                            style: TextStyle(color: Colors.blue, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Ringkasan Aktivitas
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '📊 RINGKASAN AKTIVITAS',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            _buildStatCard('📝 Catatan', _totalNotes.toString()),
+                            _buildStatCard('✅ Validasi', _validatedFiles.toString()),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            _buildStatCard('📚 Mata Kuliah', _totalCategories.toString()),
+                            _buildStatCard('📅 Semester', _totalSemesters.toString()),
+                          ],
+                        ),
+                        
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Menu Items
+                  _buildMenuItem(Icons.upload, 'Catatan Saya', count: _totalNotes.toString(), onTap: _showComingSoon),
+                  _buildMenuItem(Icons.favorite, 'Catatan Favorit', count: '5', onTap: _showComingSoon),
+                  _buildMenuItem(Icons.settings, 'Pengaturan', onTap: _showComingSoon),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Logout
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Konfirmasi Logout'),
+                            content: const Text('Apakah Anda yakin ingin keluar?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Batal'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await Supabase.instance.client.auth.signOut();
+                          if (mounted) {
+                            Navigator.pushReplacementNamed(context, '/');
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.logout, color: Colors.red),
+                      label: const Text('KELUAR', style: TextStyle(color: Colors.red)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    if (_isLoading)
-                      const CircularProgressIndicator()
-                    else ...[
-                      Text(
-                        userName,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        userEmail,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text('Anggota Aktif', style: TextStyle(color: Colors.blue, fontSize: 12)),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              
-              // Statistik Saya
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('STATISTIK SAYA', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildStatCard('12', 'Catatan Upload'),
-                  _buildStatCard('234', 'Total Download'),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _buildStatCard('47', 'AI Interaksi'),
-                  _buildStatCard('8', 'Catatan Favorit'),
-                ],
-              ),
-              const SizedBox(height: 24),
-              
-              // Menu Items
-              _buildMenuItem(Icons.upload, 'Catatan yang Saya Upload', count: '12'),
-              _buildMenuItem(Icons.download, 'Catatan yang Saya Download', count: '28'),
-              _buildMenuItem(Icons.favorite, 'Catatan Favorit', count: '8'),
-              _buildMenuItem(Icons.history, 'Riwayat Dibaca', count: '45'),
-              _buildMenuItem(Icons.settings, 'Pengaturan Akun'),
-              _buildMenuItem(Icons.help, 'Pusat Bantuan'),
-              const SizedBox(height: 24),
-              
-              // Logout Button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _logout,
-                  icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text('KELUAR', style: TextStyle(color: Colors.red)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 16),
-              
-              // Versi Aplikasi
-              const Text(
-                'NOTESHARE v1.0.0',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
-  
-  Widget _buildStatCard(String value, String label) {
+
+  Widget _buildStatCard(String title, String value) {
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.all(4),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
               blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -213,12 +274,16 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F)),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E3A5F),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
-              label,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              title,
+              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],
@@ -227,45 +292,56 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String label, {String? count}) {
+  Widget _buildMenuItem(IconData icon, String label, {String? count, VoidCallback? onTap}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.05),
-            spreadRadius: 1,
-            blurRadius: 2,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey[600], size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-          ),
-          if (count != null)
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Row(
+          children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: const Color(0xFF1E3A5F).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
+              child: Icon(icon, color: const Color(0xFF1E3A5F), size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
               child: Text(
-                count,
-                style: const TextStyle(fontSize: 12, color: Colors.blue),
+                label,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
             ),
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-        ],
+            if (count != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  count,
+                  style: const TextStyle(fontSize: 12, color: Colors.blue),
+                ),
+              ),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          ],
+        ),
       ),
     );
   }
