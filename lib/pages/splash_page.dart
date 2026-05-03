@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'auth_page.dart';
+import 'login_page.dart';
+import '../main.dart'; // Import MainWrapper
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -17,8 +18,8 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _navigateToNext() async {
-    // Tunggu 2 detik
-    await Future.delayed(const Duration(seconds: 2));
+    // Tunggu 3 detik
+    await Future.delayed(const Duration(seconds: 3));
     
     if (!mounted) return;
     
@@ -26,18 +27,16 @@ class _SplashPageState extends State<SplashPage> {
     final session = Supabase.instance.client.auth.currentSession;
     
     if (session != null) {
-      // Jika sudah login, langsung ke Home
-      // Tapi karena kita pakai MainWrapper, perlu akses ke halaman utama
-      // Untuk sementara, kita arahkan ke AuthPage dulu (akan diupdate nanti)
+      // Jika sudah login → MainWrapper (Dashboard)
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const AuthPage()),
+        MaterialPageRoute(builder: (_) => const MainWrapper()),
       );
     } else {
-      // Jika belum login, ke AuthPage
+      // Jika belum login → LoginPage
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const AuthPage()),
+        MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     }
   }
@@ -48,70 +47,60 @@ class _SplashPageState extends State<SplashPage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF1E3A5F),
-              const Color(0xFF2D5080),
+              Color(0xFF1E3A5F),
+              Color(0xFF3B82F6),
             ],
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo / Icon
+            // Logo
             Container(
-              width: 100,
-              height: 100,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
+                    color: Colors.black.withOpacity(0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: const Icon(
                 Icons.book,
-                size: 55,
+                size: 65,
                 color: Color(0xFF1E3A5F),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             // Nama Aplikasi
             const Text(
               'NOTESHARE',
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 36,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                letterSpacing: 2,
+                letterSpacing: 3,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             // Tagline
             const Text(
-              'Berbagi Catatan, Berbagi Ilmu',
+              'Bagikan Catatan, Bagikan Ilmu',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 color: Colors.white70,
                 letterSpacing: 1,
               ),
-            ),
-            const SizedBox(height: 60),
-            // Loading indicator
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Memuat...',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ],
         ),

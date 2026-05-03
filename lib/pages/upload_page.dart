@@ -254,7 +254,7 @@ class _UploadPageState extends State<UploadPage> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text('Analisis dengan AI', style: TextStyle(color: Colors.white)),
+                          : const Text('Analisis & Validasi', style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],

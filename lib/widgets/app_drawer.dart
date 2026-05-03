@@ -26,15 +26,19 @@ class AppDrawer extends StatelessWidget {
         color: Colors.white,
         child: Column(
           children: [
-            // Header Drawer
+            // ========== HEADER DRAWER (DIPERBAIKI: GRADIENT + MELENGKUNG) ==========
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 30), // ← padding disesuaikan
               decoration: const BoxDecoration(
-                color: Color(0xFF1E3A5F),
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0),
+                  bottomLeft: Radius.circular(25),   // ← melengkung
+                  bottomRight: Radius.circular(25),  // ← melengkung
                 ),
               ),
               child: Column(
