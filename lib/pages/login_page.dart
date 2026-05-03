@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'register_page.dart';
+<<<<<<< HEAD
 import 'dashboard_page.dart';
+=======
+import '../main.dart';
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -45,7 +49,11 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
+<<<<<<< HEAD
           MaterialPageRoute(builder: (_) => const DashboardPage()),
+=======
+          MaterialPageRoute(builder: (_) => const MainWrapper()),
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
         );
       }
     } catch (e) {
@@ -67,7 +75,14 @@ class _LoginPageState extends State<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+<<<<<<< HEAD
             colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
+=======
+            colors: [
+              Color(0xFF1E3A5F),
+              Color(0xFF3B82F6),
+            ],
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
           ),
         ),
         child: SafeArea(
@@ -101,7 +116,14 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 8),
                 const Text(
                   'Masuk ke akun Anda',
+<<<<<<< HEAD
                   style: TextStyle(fontSize: 14, color: Colors.white70),
+=======
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
                 ),
                 const SizedBox(height: 40),
                 // Card Form (Putih)
@@ -214,9 +236,13 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: () {
                               Navigator.push(
                                 context,
+<<<<<<< HEAD
                                 MaterialPageRoute(
                                   builder: (_) => const RegisterPage(),
                                 ),
+=======
+                                MaterialPageRoute(builder: (_) => const RegisterPage()),
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
                               );
                             },
                             child: const Text(
@@ -240,4 +266,8 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67

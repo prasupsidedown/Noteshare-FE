@@ -15,8 +15,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+<<<<<<< HEAD
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+=======
+  final TextEditingController _confirmPasswordController = TextEditingController();
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
 
   String _errorMessage = '';
 
@@ -105,7 +109,14 @@ class _RegisterPageState extends State<RegisterPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+<<<<<<< HEAD
             colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
+=======
+            colors: [
+              Color(0xFF1E3A5F),
+              Color(0xFF3B82F6),
+            ],
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
           ),
         ),
         child: SafeArea(
@@ -139,7 +150,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 8),
                 const Text(
                   'Daftar akun baru',
+<<<<<<< HEAD
                   style: TextStyle(fontSize: 14, color: Colors.white70),
+=======
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
                 ),
                 const SizedBox(height: 40),
                 // Card Form (Putih)
@@ -254,9 +272,13 @@ class _RegisterPageState extends State<RegisterPage> {
                             onPressed: () {
                               Navigator.pushReplacement(
                                 context,
+<<<<<<< HEAD
                                 MaterialPageRoute(
                                   builder: (_) => const LoginPage(),
                                 ),
+=======
+                                MaterialPageRoute(builder: (_) => const LoginPage()),
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
                               );
                             },
                             child: const Text(
@@ -280,4 +302,8 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67

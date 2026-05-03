@@ -807,6 +807,7 @@ class _UploadPageState extends State<UploadPage> {
                                 strokeWidth: 2,
                               ),
                             )
+<<<<<<< HEAD
                           : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -822,6 +823,9 @@ class _UploadPageState extends State<UploadPage> {
                                 ),
                               ],
                             ),
+=======
+                          : const Text('Analisis & Validasi', style: TextStyle(color: Colors.white)),
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
                     ),
                   ),
                   const SizedBox(height: 16),

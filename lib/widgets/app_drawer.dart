@@ -107,10 +107,17 @@ class _AppDrawerState extends State<AppDrawer> {
         color: Colors.white,
         child: Column(
           children: [
+<<<<<<< HEAD
             // Header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
+=======
+            // ========== HEADER DRAWER (DIPERBAIKI: GRADIENT + MELENGKUNG) ==========
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 30), // ← padding disesuaikan
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
@@ -118,8 +125,13 @@ class _AppDrawerState extends State<AppDrawer> {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.only(
+<<<<<<< HEAD
                   bottomLeft: Radius.circular(25),
                   bottomRight: Radius.circular(25),
+=======
+                  bottomLeft: Radius.circular(25),   // ← melengkung
+                  bottomRight: Radius.circular(25),  // ← melengkung
+>>>>>>> d0746a68e75d046c09db049b23079685ca579a67
                 ),
               ),
               child: Column(
