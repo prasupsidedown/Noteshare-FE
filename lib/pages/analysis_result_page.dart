@@ -89,7 +89,7 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Hasil Analisis AI',
+                  'Hasil Analisis & Validasi',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -136,7 +136,7 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
                             Icon(Icons.auto_awesome, color: Color(0xFF1E3A5F)),
                             SizedBox(width: 8),
                             Text(
-                              'Hasil Deteksi AI',
+                              'Hasil Analisis',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
