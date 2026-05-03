@@ -104,10 +104,7 @@ class _RegisterPageState extends State<RegisterPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF1E3A5F),
-              Color(0xFF3B82F6),
-            ],
+            colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
           ),
         ),
         child: SafeArea(
@@ -141,10 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 8),
                 const Text(
                   'Daftar akun baru',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
                 const SizedBox(height: 40),
                 // Card Form (Putih)

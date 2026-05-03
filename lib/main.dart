@@ -6,15 +6,14 @@ import 'pages/register_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/search_page.dart';
 import 'pages/upload_page.dart';
-import 'pages/chatbot_page.dart';
+import 'pages/course_page.dart';
 import 'pages/profile_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
     url: 'https://dbkowlazgxdcqqjrvlhh.supabase.co',
-    anonKey:
-        'sb_publishable_DL2D_EemJofCFkONb7_mHg_cAYbHfLZ',
+    anonKey: 'sb_publishable_DL2D_EemJofCFkONb7_mHg_cAYbHfLZ',
   );
   runApp(const NoteshareApp());
 }
@@ -52,7 +51,7 @@ class _MainWrapperState extends State<MainWrapper> {
     const DashboardPage(),
     const SearchPage(),
     const UploadPage(),
-    const ChatbotPage(),
+    const CoursePage(),
     const ProfilePage(),
   ];
 
@@ -60,9 +59,7 @@ class _MainWrapperState extends State<MainWrapper> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_currentIndex],
-      // ========== BOTTOM NAVIGATION BAR DIHAPUS ==========
-      // Tidak ada bottomNavigationBar lagi
-      // Navigasi hanya melalui Drawer (garis tiga)
+      // TIDAK ADA floatingActionButton DI SINI
     );
   }
 }

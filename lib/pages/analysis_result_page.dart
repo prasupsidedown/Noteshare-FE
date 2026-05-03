@@ -1,20 +1,27 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import '../api.config.dart';
 
 class AnalysisResultPage extends StatefulWidget {
   final String title;
+  final String description;
   final String semester;
   final String? fileName;
   final int? fileSize;
   final String? imagePath;
+  final String? filePath;
 
   const AnalysisResultPage({
     super.key,
     required this.title,
+    this.description = '',
     required this.semester,
     this.fileName,
     this.fileSize,
     this.imagePath,
+    this.filePath,
   });
 
   @override
@@ -25,44 +32,128 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
   bool _isSaving = false;
   bool _isSaved = false;
 
-  Future<void> _saveNote() async {
-    setState(() => _isSaving = true);
-    
+  List<Map<String, dynamic>> _courses = [];
+  int? _selectedCourseId;
+  bool _isLoadingCourses = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCourses();
+  }
+
+  Future<void> _fetchCourses() async {
     try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-      
-      if (user != null) {
-        await supabase.from('notes').insert({
-          'user_id': user.id,
-          'title': widget.title,
-          'semester': widget.semester,
-          'file_name': widget.fileName,
-          'file_size': widget.fileSize,
-          'created_at': DateTime.now().toIso8601String(),
+      final token = await AuthStorage.getToken();
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse(ApiConfig.courses),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> courses = data['data'] ?? [];
+        setState(() {
+          _courses = List<Map<String, dynamic>>.from(courses);
+          _isLoadingCourses = false;
+          if (_courses.length == 1) {
+            _selectedCourseId = _courses[0]['id'];
+          }
         });
-        
+      } else {
+        setState(() => _isLoadingCourses = false);
+      }
+    } catch (e) {
+      debugPrint('Fetch courses error: $e');
+      setState(() => _isLoadingCourses = false);
+    }
+  }
+
+  Future<void> _saveNote() async {
+    if (_selectedCourseId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih mata kuliah terlebih dahulu')),
+      );
+      return;
+    }
+
+    final filePath = widget.filePath ?? widget.imagePath;
+    if (filePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak ada file untuk diupload')),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final token = await AuthStorage.getToken();
+      if (token == null) return;
+
+      final request = http.MultipartRequest('POST', Uri.parse(ApiConfig.notes));
+      request.headers['Authorization'] = 'Bearer $token';
+      request.fields['title'] = widget.title;
+      request.fields['description'] = widget.description;
+      request.fields['semester'] = widget.semester;
+      request.fields['course_id'] = _selectedCourseId.toString();
+      request.fields['is_public'] = 'true';
+
+      final file = File(filePath);
+      final multipartFile = await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+      );
+      request.files.add(multipartFile);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201 && data['success'] == true) {
         setState(() {
           _isSaved = true;
           _isSaving = false;
         });
-        
-        // Tampilkan snackbar sukses
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Catatan berhasil disimpan!')),
-        );
-        
-        // Kembali ke dashboard setelah 2 detik
-        Future.delayed(const Duration(seconds: 2), () {
-          Navigator.popUntil(context, (route) => route.isFirst);
-        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Catatan berhasil disimpan!')),
+          );
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+          });
+        }
+      } else {
+        setState(() => _isSaving = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'] ?? 'Gagal menyimpan catatan'),
+            ),
+          );
+        }
       }
     } catch (e) {
+      debugPrint('Save note error: $e');
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   @override
@@ -70,7 +161,7 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
     return Scaffold(
       body: Column(
         children: [
-          // Header melengkung
+          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
@@ -85,36 +176,42 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
                 bottomRight: Radius.circular(30),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                const Text(
-                  'Hasil Analisis & Validasi',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Catatan berhasil dianalisis',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Konfirmasi Upload',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Periksa detail sebelum menyimpan',
+                      style: TextStyle(fontSize: 13, color: Colors.white70),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          // Konten Hasil Analisis
+
+          // Konten
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Card Hasil Analisis
+                  // Card Info
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -133,10 +230,10 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.auto_awesome, color: Color(0xFF1E3A5F)),
+                            Icon(Icons.info_outline, color: Color(0xFF1E3A5F)),
                             SizedBox(width: 8),
                             Text(
-                              'Hasil Analisis',
+                              'Detail Catatan',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -147,48 +244,92 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
                         ),
                         const Divider(),
                         const SizedBox(height: 8),
-                        _buildInfoRow('Judul terdeteksi:', widget.title),
+                        _buildInfoRow('Judul', widget.title),
+                        if (widget.description.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          _buildInfoRow('Deskripsi', widget.description),
+                        ],
                         const SizedBox(height: 12),
-                        _buildInfoRow('Semester:', widget.semester),
-                        const SizedBox(height: 12),
-                        if (widget.fileName != null)
-                          _buildInfoRow('Nama File:', widget.fileName!),
-                        const SizedBox(height: 12),
-                        _buildInfoRow('Status:', 'Terverifikasi'),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
+                        _buildInfoRow('Semester', widget.semester),
+                        if (widget.fileName != null) ...[
+                          const SizedBox(height: 12),
+                          _buildInfoRow('File', widget.fileName!),
+                        ],
+                        if (widget.fileSize != null) ...[
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                            'Ukuran',
+                            _formatFileSize(widget.fileSize!),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Preview konten:',
-                                style: TextStyle(fontWeight: FontWeight.w500),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.fileName != null
-                                    ? 'File "${widget.fileName}" berhasil diupload'
-                                    : 'Catatan "${widget.title}" siap digunakan',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
+                        ],
+                        const SizedBox(height: 12),
+                        _buildInfoRow('Visibilitas', 'Publik 🌐'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Pilih Mata Kuliah
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Pilih Mata Kuliah *',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        _isLoadingCourses
+                            ? const Center(child: CircularProgressIndicator())
+                            : _courses.isEmpty
+                            ? const Text(
+                                'Belum ada mata kuliah. Buat dulu di menu Courses.',
+                                style: TextStyle(color: Colors.red),
+                              )
+                            : DropdownButtonFormField<int>(
+                                value: _selectedCourseId,
+                                hint: const Text('Pilih mata kuliah'),
+                                items: _courses.map((course) {
+                                  return DropdownMenuItem<int>(
+                                    value: course['id'],
+                                    child: Text(
+                                      '${course['name']} (${course['code']})',
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (v) =>
+                                    setState(() => _selectedCourseId = v),
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Tombol Simpan
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSaved || _isSaving ? null : _saveNote,
+                      onPressed: _isSaved || _isSaving || _courses.isEmpty
+                          ? null
+                          : _saveNote,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1E3A5F),
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -206,15 +347,32 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
                               ),
                             )
                           : _isSaved
-                              ? const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.check_circle, color: Colors.white),
-                                    SizedBox(width: 8),
-                                    Text('Tersimpan!'),
-                                  ],
-                                )
-                              : const Text('Simpan Catatan', style: TextStyle(color: Colors.white)),
+                          ? const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Tersimpan!',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ],
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.cloud_upload, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Simpan Catatan',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ],
@@ -231,10 +389,13 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 100,
+          width: 90,
           child: Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey,
+            ),
           ),
         ),
         Expanded(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../api.config.dart';
 import 'login_page.dart';
-import '../main.dart'; // Import MainWrapper
+import 'dashboard_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -18,27 +18,20 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _navigateToNext() async {
-    // Tunggu 3 detik
     await Future.delayed(const Duration(seconds: 3));
     
     if (!mounted) return;
-    
-    // Cek apakah user sudah login
-    final session = Supabase.instance.client.auth.currentSession;
-    
-    if (session != null) {
-      // Jika sudah login → MainWrapper (Dashboard)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainWrapper()),
-      );
-    } else {
-      // Jika belum login → LoginPage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-      );
-    }
+
+    final isLoggedIn = await AuthStorage.isLoggedIn();
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => isLoggedIn ? const DashboardPage() : const LoginPage(),
+      ),
+    );
   }
 
   @override
@@ -51,16 +44,12 @@ class _SplashPageState extends State<SplashPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF1E3A5F),
-              Color(0xFF3B82F6),
-            ],
+            colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo
             Container(
               width: 120,
               height: 120,
@@ -75,14 +64,9 @@ class _SplashPageState extends State<SplashPage> {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.book,
-                size: 65,
-                color: Color(0xFF1E3A5F),
-              ),
+              child: const Icon(Icons.book, size: 65, color: Color(0xFF1E3A5F)),
             ),
             const SizedBox(height: 32),
-            // Nama Aplikasi
             const Text(
               'NOTESHARE',
               style: TextStyle(
@@ -93,7 +77,6 @@ class _SplashPageState extends State<SplashPage> {
               ),
             ),
             const SizedBox(height: 12),
-            // Tagline
             const Text(
               'Bagikan Catatan, Bagikan Ilmu',
               style: TextStyle(
