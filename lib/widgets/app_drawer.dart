@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../api.config.dart';
-import '../pages/auth_page.dart';
+import '../pages/splash_page.dart';
+import '../pages/login_page.dart';
 
 class AppDrawer extends StatefulWidget {
   final int currentIndex;
@@ -78,7 +79,7 @@ class _AppDrawerState extends State<AppDrawer> {
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const AuthPage()),
+        MaterialPageRoute(builder: (_) => const SplashPage()),
         (route) => false,
       );
     }
