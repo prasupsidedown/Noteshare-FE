@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../api.config.dart';
 import '../pages/splash_page.dart';
-import '../pages/login_page.dart';
+import '../pages/dashboard_page.dart';
 
 class AppDrawer extends StatefulWidget {
   final int currentIndex;

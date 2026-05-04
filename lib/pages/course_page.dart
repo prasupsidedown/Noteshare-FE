@@ -587,3 +587,4 @@ class _CoursePageState extends State<CoursePage> {
     );
   }
 }
+

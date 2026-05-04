@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'pages/splash_page.dart';
-import 'pages/login_page.dart';
-import 'pages/register_page.dart';
+import 'pages/auth_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/search_page.dart';
 import 'pages/upload_page.dart';

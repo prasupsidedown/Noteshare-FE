@@ -5,6 +5,7 @@ import '../api.config.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/notification_bell.dart';
 import '../widgets/floating_chat_button.dart';
+import 'semester_detail_page.dart';
 import 'search_page.dart';
 import 'upload_page.dart';
 import 'profile_page.dart';
@@ -24,11 +25,23 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isLoading = true;
   String _userName = '';
 
+  final List<Color> _cardColors = const [
+    Color(0xFFE8F4FD), Color(0xFFE8F5E9), Color(0xFFFEF3E8),
+    Color(0xFFFDE8EF), Color(0xFFEDE7F6), Color(0xFFE0F2F1),
+    Color(0xFFFFF3E0), Color(0xFFF3E5F5),
+  ];
+
+  final List<Color> _iconColors = const [
+    Color(0xFF1E3A5F), Color(0xFF0F9D58), Color(0xFFE65100),
+    Color(0xFFE91E63), Color(0xFF6A1B9A), Color(0xFF00838F),
+    Color(0xFFF57C00), Color(0xFF7B1FA2),
+  ];
+
   @override
   void initState() {
     super.initState();
     _loadUserName();
-    _fetchSemesterData();
+    _fetchSemesterFromCourses();
   }
 
   Future<void> _loadUserName() async {
@@ -38,14 +51,14 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  Future<void> _fetchSemesterData() async {
+  Future<void> _fetchSemesterFromCourses() async {
     setState(() => _isLoading = true);
     try {
       final token = await AuthStorage.getToken();
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse(ApiConfig.myNotes),
+        Uri.parse(ApiConfig.courses),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -55,24 +68,25 @@ class _DashboardPageState extends State<DashboardPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> notes = data['data'] ?? [];
+        final List<dynamic> courses = data['data'] ?? [];
 
         Map<String, int> semesterCount = {};
-        for (var note in notes) {
-          String semester = note['semester'] ?? 'Semester 1';
+        for (var course in courses) {
+          String semester = course['semester'] ?? 'Semester 1';
           semesterCount[semester] = (semesterCount[semester] ?? 0) + 1;
         }
 
         final List<Map<String, dynamic>> semesterList = [];
         semesterCount.forEach((semester, count) {
-          semesterList.add({'name': semester, 'count': count});
+          int semesterNum = int.tryParse(semester.replaceAll('Semester ', '')) ?? 1;
+          semesterList.add({
+            'name': semester,
+            'count': count,
+            'number': semesterNum,
+          });
         });
 
-        semesterList.sort((a, b) {
-          int aNum = int.tryParse(a['name'].replaceAll('Semester ', '')) ?? 0;
-          int bNum = int.tryParse(b['name'].replaceAll('Semester ', '')) ?? 0;
-          return aNum.compareTo(bNum);
-        });
+        semesterList.sort((a, b) => a['number'].compareTo(b['number']));
 
         if (mounted) {
           setState(() {
@@ -101,10 +115,7 @@ class _DashboardPageState extends State<DashboardPage> {
         child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Notifikasi',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            Text('Notifikasi', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             Divider(),
             Expanded(child: Center(child: Text('Belum ada notifikasi'))),
           ],
@@ -113,8 +124,11 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // ========== NAVIGASI KE HALAMAN LAIN ==========
   void _onItemSelected(int index) {
-    setState(() => _selectedIndex = index);
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   Widget _getBody() {
@@ -136,12 +150,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildDashboardContent() {
     return RefreshIndicator(
-      onRefresh: _fetchSemesterData,
+      onRefresh: _fetchSemesterFromCourses,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
-            // Header
+            // Header Dashboard
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
@@ -161,68 +175,44 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   const Text(
                     'Dashboard',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _userName.isNotEmpty
-                        ? 'Halo, $_userName!'
-                        : 'Kelola catatan kuliahmu',
+                    _userName.isNotEmpty ? 'Halo, $_userName!' : 'Kelola mata kuliahmu',
                     style: const TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                 ],
               ),
             ),
 
-            // Konten
+            // Konten Semester
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Semester Saya',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  const Text('Semester Saya', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(
-                    'Kelola catatan per semester',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
+                  Text('Kelola mata kuliah dan catatan per semester',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                   const SizedBox(height: 20),
 
-                  if (_isLoading)
+                  if (_isLoading && _semesterData.isEmpty)
                     const Center(child: CircularProgressIndicator())
                   else if (_semesterData.isEmpty)
                     Container(
                       padding: const EdgeInsets.all(40),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(16)),
                       child: Column(
                         children: [
-                          Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+                          Icon(Icons.school_outlined, size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Belum ada catatan',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          const Text('Belum ada mata kuliah',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                           const SizedBox(height: 8),
-                          Text(
-                            'Upload catatan pertama kamu',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
+                          Text('Buat mata kuliah dulu di menu Mata Kuliah',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                         ],
                       ),
                     )
@@ -233,72 +223,62 @@ class _DashboardPageState extends State<DashboardPage> {
                       itemCount: _semesterData.length,
                       itemBuilder: (context, index) {
                         final semester = _semesterData[index];
+                        final colorIndex = (semester['number'] - 1) % _cardColors.length;
+                        final cardColor = _cardColors[colorIndex];
+                        final iconColor = _iconColors[colorIndex];
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: cardColor,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF1E3A5F,
-                                  ).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  _getSemesterIcon(
-                                    int.tryParse(
-                                          semester['name'].replaceAll(
-                                            'Semester ',
-                                            '',
-                                          ),
-                                        ) ??
-                                        1,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SemesterDetailPage(
+                                      semesterName: semester['name'],
+                                      semesterNumber: semester['number'],
+                                    ),
                                   ),
-                                  color: const Color(0xFF1E3A5F),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
                                   children: [
-                                    Text(
-                                      semester['name'],
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                    Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        color: iconColor.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(_getSemesterIcon(semester['number']), color: iconColor, size: 28),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(semester['name'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                          const SizedBox(height: 4),
+                                          Text('${semester['count']} Mata Kuliah',
+                                              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${semester['count']} Catatan',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
+                                    const Icon(Icons.chevron_right, color: Colors.grey),
                                   ],
                                 ),
                               ),
-                              const Icon(
-                                Icons.chevron_right,
-                                color: Colors.grey,
-                              ),
-                            ],
+                            ),
                           ),
                         );
                       },
@@ -314,20 +294,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
   IconData _getSemesterIcon(int semester) {
     switch (semester) {
-      case 1:
-        return Icons.looks_one;
-      case 2:
-        return Icons.looks_two;
-      case 3:
-        return Icons.looks_3;
-      case 4:
-        return Icons.looks_4;
-      case 5:
-        return Icons.looks_5;
-      case 6:
-        return Icons.looks_6;
-      default:
-        return Icons.bookmark;
+      case 1: return Icons.looks_one;
+      case 2: return Icons.looks_two;
+      case 3: return Icons.looks_3;
+      case 4: return Icons.looks_4;
+      case 5: return Icons.looks_5;
+      case 6: return Icons.looks_6;
+      case 7: return Icons.numbers;
+      case 8: return Icons.numbers;
+      default: return Icons.bookmark;
     }
   }
 

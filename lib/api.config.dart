@@ -1,23 +1,23 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
-  static const String baseUrl =
-      'https://3c4d-2404-8000-1058-7e5-709e-39cf-48ac-312b.ngrok-free.app/api/v1';
+  static const String _localUrl = 'http://192.168.18.67:8080/api/v1';
+  static const String _ngrokUrl =
+      'https://jenice-treasonable-meteorologically.ngrok-free.dev/api/v1';
 
-  // Auth
-  static const String register = '$baseUrl/auth/register';
-  static const String login = '$baseUrl/auth/login';
-  static const String me = '$baseUrl/auth/me';
+  static String get baseUrl => kIsWeb ? _localUrl : _ngrokUrl;
 
-  // Notes
-  static const String notes = '$baseUrl/notes';
-  static const String myNotes = '$baseUrl/notes/my';
+  static String get register => '$baseUrl/auth/register';
+  static String get login => '$baseUrl/auth/login';
+  static String get me => '$baseUrl/auth/me';
 
-  // Courses
-  static const String courses = '$baseUrl/courses';
+  static String get notes => '$baseUrl/notes';
+  static String get myNotes => '$baseUrl/notes/my';
 
-  // Todos
-  static const String myTodos = '$baseUrl/todos/my';
+  static String get courses => '$baseUrl/courses';
+
+  static String get myTodos => '$baseUrl/todos/my';
 }
 
 class AuthStorage {
