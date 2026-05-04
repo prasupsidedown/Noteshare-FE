@@ -3,20 +3,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
   static const String _localUrl = 'http://192.168.18.67:8080/api/v1';
-  static const String _ngrokUrl =
-      'https://jenice-treasonable-meteorologically.ngrok-free.dev/api/v1';
+  static const String _prodUrl = 'http://3.25.209.242:8080/api/v1';
 
-  static String get baseUrl => kIsWeb ? _localUrl : _ngrokUrl;
+  static String get baseUrl => kIsWeb ? _localUrl : _prodUrl;
 
+  // Auth
   static String get register => '$baseUrl/auth/register';
   static String get login => '$baseUrl/auth/login';
   static String get me => '$baseUrl/auth/me';
 
+  // Notes
   static String get notes => '$baseUrl/notes';
   static String get myNotes => '$baseUrl/notes/my';
 
+  // Courses
   static String get courses => '$baseUrl/courses';
 
+  // Todos
   static String get myTodos => '$baseUrl/todos/my';
 }
 
