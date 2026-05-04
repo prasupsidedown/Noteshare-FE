@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'course_page.dart';
 import 'package:http/http.dart' as http;
 import '../api.config.dart';
 import 'auth_page.dart';
-import 'course_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -35,6 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'ngrok-skip-browser-warning': 'true',
         },
       );
 
@@ -59,6 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'ngrok-skip-browser-warning': 'true',
         },
       );
 

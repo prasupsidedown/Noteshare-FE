@@ -55,7 +55,10 @@ class _AuthPageState extends State<AuthPage> {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.login),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: jsonEncode({'email': email, 'password': password}),
       );
 
@@ -140,7 +143,10 @@ class _AuthPageState extends State<AuthPage> {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.register),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: jsonEncode({'name': name, 'email': email, 'password': password}),
       );
 

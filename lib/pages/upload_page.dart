@@ -24,7 +24,6 @@ class _UploadPageState extends State<UploadPage> {
   XFile? _selectedImage;
   bool _isProcessing = false;
 
-  // Untuk highlight field yang belum diisi
   bool _showTitleError = false;
   bool _showSemesterError = false;
   bool _showFileError = false;
@@ -40,7 +39,6 @@ class _UploadPageState extends State<UploadPage> {
     'Semester 8',
   ];
 
-  // Key untuk scroll ke field yang error
   final _titleKey = GlobalKey();
   final _fileKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
@@ -77,7 +75,6 @@ class _UploadPageState extends State<UploadPage> {
   }
 
   Future<void> _proceedToUpload() async {
-    // Reset semua error
     setState(() {
       _showTitleError = false;
       _showSemesterError = false;
@@ -86,7 +83,6 @@ class _UploadPageState extends State<UploadPage> {
 
     bool hasError = false;
 
-    // Cek file/konten dulu (paling atas di UI)
     if (_selectedMethod == 'tulis') {
       if (_writeController.text.trim().isEmpty) {
         setState(() => _showFileError = true);
@@ -99,20 +95,17 @@ class _UploadPageState extends State<UploadPage> {
       }
     }
 
-    // Cek judul
     if (_titleController.text.trim().isEmpty) {
       setState(() => _showTitleError = true);
       hasError = true;
     }
 
-    // Cek semester
     if (_selectedSemester == null) {
       setState(() => _showSemesterError = true);
       hasError = true;
     }
 
     if (hasError) {
-      // Scroll ke bagian yang error — prioritas file jika belum dipilih
       if (_showFileError) {
         _scrollController.animateTo(
           0,
@@ -157,7 +150,6 @@ class _UploadPageState extends State<UploadPage> {
     }
 
     setState(() => _isProcessing = false);
-
     if (!mounted) return;
 
     Navigator.push(
@@ -183,18 +175,20 @@ class _UploadPageState extends State<UploadPage> {
     );
     if (result != null) {
       final file = result.files.first;
+      if (file.path == null) {
+        _showSnackbar('Gagal membaca file, coba lagi', isError: true);
+        return;
+      }
       if (file.size > 50 * 1024 * 1024) {
         _showSnackbar('File maksimal 50MB', isError: true);
         return;
       }
-      // setState langsung — preview muncul segera
       setState(() {
         _selectedFileName = file.name;
         _selectedFileSize = file.size;
         _selectedFilePath = file.path;
         _selectedMethod = 'upload';
-        _showFileError = false; // hilangkan error saat file sudah dipilih
-        // Auto-isi judul hanya jika masih kosong
+        _showFileError = false;
         if (_titleController.text.trim().isEmpty) {
           _titleController.text = file.name.replaceAll(RegExp(r'\.[^.]*$'), '');
           _showTitleError = false;
@@ -205,7 +199,10 @@ class _UploadPageState extends State<UploadPage> {
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
+    final image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
     if (image != null) {
       final file = File(image.path);
       final size = await file.length();
@@ -237,7 +234,6 @@ class _UploadPageState extends State<UploadPage> {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
-  // Ekstensi → icon
   IconData _getFileIcon(String? fileName) {
     if (fileName == null) return Icons.insert_drive_file;
     final ext = fileName.split('.').last.toLowerCase();
@@ -293,7 +289,6 @@ class _UploadPageState extends State<UploadPage> {
     return Scaffold(
       body: Column(
         children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
@@ -327,8 +322,6 @@ class _UploadPageState extends State<UploadPage> {
               ],
             ),
           ),
-
-          // Form
           Expanded(
             child: SingleChildScrollView(
               controller: _scrollController,
@@ -336,7 +329,6 @@ class _UploadPageState extends State<UploadPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Pilih metode
                   Row(
                     children: [
                       _buildMethodCard(Icons.camera_alt, 'Kamera', 'kamera'),
@@ -348,7 +340,6 @@ class _UploadPageState extends State<UploadPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Area Upload File ──
                   if (_selectedMethod == 'upload') ...[
                     if (_showFileError)
                       Padding(
@@ -394,7 +385,7 @@ class _UploadPageState extends State<UploadPage> {
                           color: _showFileError
                               ? Colors.red[50]
                               : _selectedFilePath != null
-                              ? const Color(0xFF1E3A5F).withAlpha(13)
+                              ? const Color(0xFF1E3A5F).withValues(alpha: 0.05)
                               : Colors.grey[50],
                         ),
                         child: _selectedFilePath != null
@@ -406,7 +397,7 @@ class _UploadPageState extends State<UploadPage> {
                                     decoration: BoxDecoration(
                                       color: _getFileColor(
                                         _selectedFileName,
-                                      ).withAlpha(30),
+                                      ).withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -508,7 +499,6 @@ class _UploadPageState extends State<UploadPage> {
                     ),
                   ],
 
-                  // ── Area Kamera ──
                   if (_selectedMethod == 'kamera') ...[
                     if (_showFileError)
                       Padding(
@@ -567,7 +557,9 @@ class _UploadPageState extends State<UploadPage> {
                                       fit: BoxFit.cover,
                                     ),
                                     Container(
-                                      color: Colors.black.withAlpha(64),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.25,
+                                      ),
                                     ),
                                     Positioned(
                                       bottom: 8,
@@ -623,7 +615,7 @@ class _UploadPageState extends State<UploadPage> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Tap untuk pilih foto',
+                                    'Tap untuk ambil foto',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       color: _showFileError
@@ -632,7 +624,7 @@ class _UploadPageState extends State<UploadPage> {
                                     ),
                                   ),
                                   Text(
-                                    'JPG, PNG (maks 50MB)',
+                                    'Kamera akan terbuka otomatis',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey[500],
@@ -644,7 +636,6 @@ class _UploadPageState extends State<UploadPage> {
                     ),
                   ],
 
-                  // ── Area Tulis ──
                   if (_selectedMethod == 'tulis') ...[
                     if (_showFileError)
                       Padding(
@@ -700,7 +691,6 @@ class _UploadPageState extends State<UploadPage> {
 
                   const SizedBox(height: 20),
 
-                  // Judul
                   TextField(
                     key: _titleKey,
                     controller: _titleController,
@@ -730,7 +720,6 @@ class _UploadPageState extends State<UploadPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Deskripsi
                   TextField(
                     controller: _descriptionController,
                     maxLines: 3,
@@ -744,7 +733,6 @@ class _UploadPageState extends State<UploadPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Semester
                   DropdownButtonFormField<String>(
                     value: _selectedSemester,
                     hint: Text(
@@ -780,7 +768,6 @@ class _UploadPageState extends State<UploadPage> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Tombol Upload
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
