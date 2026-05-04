@@ -24,8 +24,14 @@ class _CoursePageState extends State<CoursePage> {
   String? _selectedSemester;
 
   final List<String> _semesters = [
-    'Semester 1', 'Semester 2', 'Semester 3', 'Semester 4',
-    'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8',
+    'Semester 1',
+    'Semester 2',
+    'Semester 3',
+    'Semester 4',
+    'Semester 5',
+    'Semester 6',
+    'Semester 7',
+    'Semester 8',
   ];
 
   @override
@@ -53,6 +59,7 @@ class _CoursePageState extends State<CoursePage> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'ngrok-skip-browser-warning': 'true',
         },
       );
 
@@ -98,6 +105,7 @@ class _CoursePageState extends State<CoursePage> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'ngrok-skip-browser-warning': 'true',
         },
         body: jsonEncode({
           'name': name,
@@ -154,6 +162,7 @@ class _CoursePageState extends State<CoursePage> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'ngrok-skip-browser-warning': 'true',
         },
       );
 
@@ -170,7 +179,9 @@ class _CoursePageState extends State<CoursePage> {
   }
 
   void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showCreateSheet() {
@@ -212,7 +223,11 @@ class _CoursePageState extends State<CoursePage> {
               const SizedBox(height: 16),
               const Text(
                 'Tambah Mata Kuliah',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F)),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E3A5F),
+                ),
               ),
               const SizedBox(height: 20),
               TextField(
@@ -220,7 +235,9 @@ class _CoursePageState extends State<CoursePage> {
                 decoration: InputDecoration(
                   labelText: 'Nama Mata Kuliah *',
                   hintText: 'contoh: Pemrograman Web',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
@@ -230,7 +247,9 @@ class _CoursePageState extends State<CoursePage> {
                 decoration: InputDecoration(
                   labelText: 'Kode Mata Kuliah *',
                   hintText: 'contoh: PWB101',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
@@ -240,20 +259,26 @@ class _CoursePageState extends State<CoursePage> {
                 decoration: InputDecoration(
                   labelText: 'Deskripsi (opsional)',
                   hintText: 'Deskripsi singkat mata kuliah...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: _selectedSemester,
                 hint: const Text('Pilih Semester *'),
-                items: _semesters.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                items: _semesters
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
                 onChanged: (v) {
                   setState(() => _selectedSemester = v);
                   setSheetState(() => _selectedSemester = v);
                 },
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -264,11 +289,17 @@ class _CoursePageState extends State<CoursePage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E3A5F),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: const Text(
                     'Buat Mata Kuliah',
-                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -281,8 +312,14 @@ class _CoursePageState extends State<CoursePage> {
 
   Color _getCourseColor(int index) {
     const colors = [
-      Color(0xFF1E3A5F), Color(0xFF0F9D58), Color(0xFFE65100), Color(0xFF6A1B9A),
-      Color(0xFF00838F), Color(0xFFC62828), Color(0xFF283593), Color(0xFF2E7D32),
+      Color(0xFF1E3A5F),
+      Color(0xFF0F9D58),
+      Color(0xFFE65100),
+      Color(0xFF6A1B9A),
+      Color(0xFF00838F),
+      Color(0xFFC62828),
+      Color(0xFF283593),
+      Color(0xFF2E7D32),
     ];
     return colors[index % colors.length];
   }
@@ -333,12 +370,21 @@ class _CoursePageState extends State<CoursePage> {
                       children: [
                         const Text(
                           'Mata Kuliah',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _courses.isEmpty ? 'Belum ada mata kuliah' : '${_courses.length} mata kuliah',
-                          style: const TextStyle(fontSize: 12, color: Colors.white70),
+                          _courses.isEmpty
+                              ? 'Belum ada mata kuliah'
+                              : '${_courses.length} mata kuliah',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
                         ),
                       ],
                     ),
@@ -356,18 +402,29 @@ class _CoursePageState extends State<CoursePage> {
                                       SizedBox(
                                         height: constraints.maxHeight * 0.55,
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.school_outlined, size: 80, color: Colors.grey[300]),
+                                            Icon(
+                                              Icons.school_outlined,
+                                              size: 80,
+                                              color: Colors.grey[300],
+                                            ),
                                             const SizedBox(height: 16),
                                             const Text(
                                               'Belum ada mata kuliah',
-                                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
                                               'Tap tombol + untuk menambahkan',
-                                              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.grey[500],
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -380,52 +437,87 @@ class _CoursePageState extends State<CoursePage> {
                                     itemBuilder: (context, index) {
                                       final course = _courses[index];
                                       final color = _getCourseColor(index);
-                                      final initial = (course['name'] as String).isNotEmpty
-                                          ? (course['name'] as String)[0].toUpperCase()
+                                      final initial =
+                                          (course['name'] as String).isNotEmpty
+                                          ? (course['name'] as String)[0]
+                                                .toUpperCase()
                                           : '?';
 
                                       return Container(
-                                        margin: const EdgeInsets.only(bottom: 12),
+                                        margin: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.grey.withOpacity(0.08),
+                                              color: Colors.grey.withOpacity(
+                                                0.08,
+                                              ),
                                               blurRadius: 6,
                                               offset: const Offset(0, 2),
                                             ),
                                           ],
                                         ),
                                         child: ListTile(
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 8,
+                                              ),
                                           leading: CircleAvatar(
                                             radius: 22,
                                             backgroundColor: color,
-                                            child: Text(initial, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                            child: Text(
+                                              initial,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                           ),
                                           title: Text(
                                             course['name'] ?? '',
-                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                            ),
                                           ),
                                           subtitle: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               const SizedBox(height: 2),
                                               Text(
                                                 course['code'] ?? '',
-                                                style: const TextStyle(color: Color(0xFF3B82F6), fontWeight: FontWeight.w500, fontSize: 12),
+                                                style: const TextStyle(
+                                                  color: Color(0xFF3B82F6),
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 12,
+                                                ),
                                               ),
                                               if (course['semester'] != null)
                                                 Text(
                                                   course['semester'],
-                                                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.grey[500],
+                                                  ),
                                                 ),
                                             ],
                                           ),
                                           trailing: IconButton(
-                                            icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                            onPressed: () => _deleteCourse(course['id'], course['name']),
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                              color: Colors.red,
+                                            ),
+                                            onPressed: () => _deleteCourse(
+                                              course['id'],
+                                              course['name'],
+                                            ),
                                           ),
                                         ),
                                       );
@@ -444,8 +536,14 @@ class _CoursePageState extends State<CoursePage> {
                   child: GestureDetector(
                     onPanUpdate: (details) {
                       setState(() {
-                        _fabX = (_fabX + details.delta.dx).clamp(0, constraints.maxWidth - 56);
-                        _fabY = (_fabY + details.delta.dy).clamp(0, constraints.maxHeight - 56);
+                        _fabX = (_fabX + details.delta.dx).clamp(
+                          0,
+                          constraints.maxWidth - 56,
+                        );
+                        _fabY = (_fabY + details.delta.dy).clamp(
+                          0,
+                          constraints.maxHeight - 56,
+                        );
                       });
                     },
                     onPanEnd: (_) {
@@ -474,7 +572,11 @@ class _CoursePageState extends State<CoursePage> {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 28),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),

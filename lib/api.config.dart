@@ -1,7 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
-  static const String baseUrl = 'http://192.168.18.67:8080/api/v1';
+  static const String baseUrl =
+      'https://3c4d-2404-8000-1058-7e5-709e-39cf-48ac-312b.ngrok-free.app/api/v1';
 
   // Auth
   static const String register = '$baseUrl/auth/register';

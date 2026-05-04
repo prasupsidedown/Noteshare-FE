@@ -15,7 +15,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   String _errorMessage = '';
 
@@ -86,7 +87,23 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     } catch (e) {
-      setState(() => _errorMessage = 'Gagal mendaftar');
+      String msg = 'Gagal mendaftar. Coba lagi.';
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('already registered') ||
+          errStr.contains('user already exists')) {
+        msg = 'Email sudah terdaftar. Silakan login.';
+      } else if (errStr.contains('invalid email')) {
+        msg = 'Format email tidak valid.';
+      } else if (errStr.contains('weak password')) {
+        msg = 'Password terlalu lemah.';
+      } else if (errStr.contains('network') ||
+          errStr.contains('socket') ||
+          errStr.contains('connection')) {
+        msg = 'Gagal terhubung ke server. Periksa koneksi internet.';
+      } else if (errStr.contains('email not confirmed')) {
+        msg = 'Cek email kamu untuk konfirmasi pendaftaran.';
+      }
+      setState(() => _errorMessage = msg);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -253,7 +270,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             onPressed: () {
                               Navigator.pushReplacement(
                                 context,
-                                MaterialPageRoute(builder: (_) => const LoginPage()),
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginPage(),
+                                ),
                               );
                             },
                             child: const Text(

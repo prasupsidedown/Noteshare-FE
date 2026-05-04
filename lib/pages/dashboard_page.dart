@@ -49,6 +49,7 @@ class _DashboardPageState extends State<DashboardPage> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'ngrok-skip-browser-warning': 'true',
         },
       );
 

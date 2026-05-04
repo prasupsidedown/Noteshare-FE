@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../api.config.dart';
-import 'login_page.dart';
+import 'auth_page.dart';
 import 'dashboard_page.dart';
 
 class SplashPage extends StatefulWidget {
@@ -19,7 +19,7 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _navigateToNext() async {
     await Future.delayed(const Duration(seconds: 3));
-    
+
     if (!mounted) return;
 
     final isLoggedIn = await AuthStorage.isLoggedIn();
@@ -29,7 +29,7 @@ class _SplashPageState extends State<SplashPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => isLoggedIn ? const DashboardPage() : const LoginPage(),
+        builder: (_) => isLoggedIn ? const DashboardPage() : const AuthPage(),
       ),
     );
   }

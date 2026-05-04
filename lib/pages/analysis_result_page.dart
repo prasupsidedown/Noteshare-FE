@@ -45,13 +45,17 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
   Future<void> _fetchCourses() async {
     try {
       final token = await AuthStorage.getToken();
-      if (token == null) return;
+      if (token == null) {
+        setState(() => _isLoadingCourses = false);
+        return;
+      }
 
       final response = await http.get(
         Uri.parse(ApiConfig.courses),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'ngrok-skip-browser-warning': 'true',
         },
       );
 
@@ -98,6 +102,7 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
 
       final request = http.MultipartRequest('POST', Uri.parse(ApiConfig.notes));
       request.headers['Authorization'] = 'Bearer $token';
+      request.headers['ngrok-skip-browser-warning'] = 'true';
       request.fields['title'] = widget.title;
       request.fields['description'] = widget.description;
       request.fields['semester'] = widget.semester;
