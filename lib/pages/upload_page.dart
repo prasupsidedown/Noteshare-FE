@@ -29,14 +29,8 @@ class _UploadPageState extends State<UploadPage> {
   bool _showFileError = false;
 
   final List<String> _semesters = [
-    'Semester 1',
-    'Semester 2',
-    'Semester 3',
-    'Semester 4',
-    'Semester 5',
-    'Semester 6',
-    'Semester 7',
-    'Semester 8',
+    'Semester 1', 'Semester 2', 'Semester 3', 'Semester 4',
+    'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8',
   ];
 
   final _titleKey = GlobalKey();
@@ -57,11 +51,7 @@ class _UploadPageState extends State<UploadPage> {
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.info_outline,
-              color: Colors.white,
-              size: 18,
-            ),
+            Icon(isError ? Icons.error_outline : Icons.info_outline, color: Colors.white, size: 18),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
@@ -107,16 +97,12 @@ class _UploadPageState extends State<UploadPage> {
 
     if (hasError) {
       if (_showFileError) {
-        _scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
         final msg = _selectedMethod == 'kamera'
             ? 'Pilih foto terlebih dahulu (tap area foto di atas)'
             : _selectedMethod == 'tulis'
-            ? 'Tulis catatan terlebih dahulu'
-            : 'Pilih file terlebih dahulu (tap area upload di atas)';
+                ? 'Tulis catatan terlebih dahulu'
+                : 'Pilih file terlebih dahulu (tap area upload di atas)';
         _showSnackbar(msg, isError: true);
       } else if (_showTitleError) {
         _showSnackbar('Judul catatan harus diisi', isError: true);
@@ -135,9 +121,7 @@ class _UploadPageState extends State<UploadPage> {
     if (_selectedMethod == 'tulis') {
       try {
         final tempDir = Directory.systemTemp;
-        final tempFile = File(
-          '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}_note.txt',
-        );
+        final tempFile = File('${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}_note.txt');
         await tempFile.writeAsString(_writeController.text.trim());
         finalFilePath = tempFile.path;
         finalFileName = '${_titleController.text.trim()}.txt';
@@ -218,10 +202,7 @@ class _UploadPageState extends State<UploadPage> {
         _selectedMethod = 'kamera';
         _showFileError = false;
         if (_titleController.text.trim().isEmpty) {
-          _titleController.text = image.name.replaceAll(
-            RegExp(r'\.[^.]*$'),
-            '',
-          );
+          _titleController.text = image.name.replaceAll(RegExp(r'\.[^.]*$'), '');
           _showTitleError = false;
         }
       });
@@ -238,25 +219,13 @@ class _UploadPageState extends State<UploadPage> {
     if (fileName == null) return Icons.insert_drive_file;
     final ext = fileName.split('.').last.toLowerCase();
     switch (ext) {
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'doc':
-      case 'docx':
-        return Icons.article;
-      case 'ppt':
-      case 'pptx':
-        return Icons.slideshow;
-      case 'xls':
-      case 'xlsx':
-        return Icons.table_chart;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-        return Icons.image;
-      case 'txt':
-        return Icons.text_snippet;
-      default:
-        return Icons.insert_drive_file;
+      case 'pdf': return Icons.picture_as_pdf;
+      case 'doc': case 'docx': return Icons.article;
+      case 'ppt': case 'pptx': return Icons.slideshow;
+      case 'xls': case 'xlsx': return Icons.table_chart;
+      case 'jpg': case 'jpeg': case 'png': return Icons.image;
+      case 'txt': return Icons.text_snippet;
+      default: return Icons.insert_drive_file;
     }
   }
 
@@ -264,23 +233,12 @@ class _UploadPageState extends State<UploadPage> {
     if (fileName == null) return Colors.grey;
     final ext = fileName.split('.').last.toLowerCase();
     switch (ext) {
-      case 'pdf':
-        return Colors.red;
-      case 'doc':
-      case 'docx':
-        return Colors.blue;
-      case 'ppt':
-      case 'pptx':
-        return Colors.orange;
-      case 'xls':
-      case 'xlsx':
-        return Colors.green;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-        return Colors.purple;
-      default:
-        return Colors.grey[600]!;
+      case 'pdf': return Colors.red;
+      case 'doc': case 'docx': return Colors.blue;
+      case 'ppt': case 'pptx': return Colors.orange;
+      case 'xls': case 'xlsx': return Colors.green;
+      case 'jpg': case 'jpeg': case 'png': return Colors.purple;
+      default: return Colors.grey[600]!;
     }
   }
 
@@ -306,19 +264,11 @@ class _UploadPageState extends State<UploadPage> {
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Upload Catatan',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                Text('Upload Catatan',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
                 SizedBox(height: 2),
-                Text(
-                  'Bagikan catatan kuliahmu',
-                  style: TextStyle(fontSize: 12, color: Colors.white70),
-                ),
+                Text('Bagikan catatan kuliahmu',
+                    style: TextStyle(fontSize: 12, color: Colors.white70)),
               ],
             ),
           ),
@@ -346,20 +296,10 @@ class _UploadPageState extends State<UploadPage> {
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Colors.red,
-                              size: 16,
-                            ),
+                            const Icon(Icons.error_outline, color: Colors.red, size: 16),
                             const SizedBox(width: 6),
-                            Text(
-                              'Pilih file terlebih dahulu',
-                              style: TextStyle(
-                                color: Colors.red[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                            Text('Pilih file terlebih dahulu',
+                                style: TextStyle(color: Colors.red[700], fontSize: 12, fontWeight: FontWeight.w500)),
                           ],
                         ),
                       ),
@@ -375,18 +315,16 @@ class _UploadPageState extends State<UploadPage> {
                             color: _showFileError
                                 ? Colors.red
                                 : _selectedFilePath != null
-                                ? const Color(0xFF1E3A5F)
-                                : Colors.grey[300]!,
-                            width: _showFileError || _selectedFilePath != null
-                                ? 2
-                                : 1,
+                                    ? const Color(0xFF1E3A5F)
+                                    : Colors.grey[300]!,
+                            width: _showFileError || _selectedFilePath != null ? 2 : 1,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           color: _showFileError
                               ? Colors.red[50]
                               : _selectedFilePath != null
-                              ? const Color(0xFF1E3A5F).withValues(alpha: 0.05)
-                              : Colors.grey[50],
+                                  ? const Color(0xFF1E3A5F).withValues(alpha: 0.05)
+                                  : Colors.grey[50],
                         ),
                         child: _selectedFilePath != null
                             ? Row(
@@ -395,55 +333,33 @@ class _UploadPageState extends State<UploadPage> {
                                     width: 52,
                                     height: 52,
                                     decoration: BoxDecoration(
-                                      color: _getFileColor(
-                                        _selectedFileName,
-                                      ).withValues(alpha: 0.12),
+                                      color: _getFileColor(_selectedFileName).withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Icon(
-                                      _getFileIcon(_selectedFileName),
-                                      color: _getFileColor(_selectedFileName),
-                                      size: 30,
-                                    ),
+                                    child: Icon(_getFileIcon(_selectedFileName),
+                                        color: _getFileColor(_selectedFileName), size: 30),
                                   ),
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          _selectedFileName ?? '',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                            color: Color(0xFF1E3A5F),
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                        Text(_selectedFileName ?? '',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                                color: Color(0xFF1E3A5F)),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis),
                                         const SizedBox(height: 4),
-                                        Text(
-                                          _selectedFileSize != null
-                                              ? _formatFileSize(
-                                                  _selectedFileSize!,
-                                                )
-                                              : '',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
+                                        Text(_selectedFileSize != null ? _formatFileSize(_selectedFileSize!) : '',
+                                            style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                                       ],
                                     ),
                                   ),
                                   Column(
                                     children: [
-                                      const Icon(
-                                        Icons.check_circle,
-                                        color: Color(0xFF1E3A5F),
-                                        size: 22,
-                                      ),
+                                      const Icon(Icons.check_circle, color: Color(0xFF1E3A5F), size: 22),
                                       const SizedBox(height: 4),
                                       GestureDetector(
                                         onTap: () => setState(() {
@@ -451,15 +367,9 @@ class _UploadPageState extends State<UploadPage> {
                                           _selectedFileName = null;
                                           _selectedFileSize = null;
                                         }),
-                                        child: Text(
-                                          'Ganti',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[500],
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
-                                        ),
+                                        child: Text('Ganti',
+                                            style: TextStyle(fontSize: 11, color: Colors.grey[500],
+                                                decoration: TextDecoration.underline)),
                                       ),
                                     ],
                                   ),
@@ -468,31 +378,16 @@ class _UploadPageState extends State<UploadPage> {
                             : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
-                                    Icons.cloud_upload_outlined,
-                                    size: 44,
-                                    color: _showFileError
-                                        ? Colors.red[300]
-                                        : Colors.grey[400],
-                                  ),
+                                  Icon(Icons.cloud_upload_outlined,
+                                      size: 44,
+                                      color: _showFileError ? Colors.red[300] : Colors.grey[400]),
                                   const SizedBox(height: 10),
-                                  Text(
-                                    'Tap di sini untuk pilih file',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: _showFileError
-                                          ? Colors.red[700]
-                                          : Colors.grey[700],
-                                    ),
-                                  ),
+                                  Text('Tap di sini untuk pilih file',
+                                      style: TextStyle(fontWeight: FontWeight.w600,
+                                          color: _showFileError ? Colors.red[700] : Colors.grey[700])),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    'PDF, DOC, PPT, JPG, PNG (maks 50MB)',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
+                                  Text('PDF, DOC, PPT, JPG, PNG (maks 50MB)',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                                 ],
                               ),
                       ),
@@ -505,20 +400,10 @@ class _UploadPageState extends State<UploadPage> {
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Colors.red,
-                              size: 16,
-                            ),
+                            const Icon(Icons.error_outline, color: Colors.red, size: 16),
                             const SizedBox(width: 6),
-                            Text(
-                              'Pilih foto terlebih dahulu',
-                              style: TextStyle(
-                                color: Colors.red[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                            Text('Pilih foto terlebih dahulu',
+                                style: TextStyle(color: Colors.red[700], fontSize: 12, fontWeight: FontWeight.w500)),
                           ],
                         ),
                       ),
@@ -530,21 +415,12 @@ class _UploadPageState extends State<UploadPage> {
                         height: 140,
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: _showFileError
-                                ? Colors.red
-                                : _selectedFilePath != null
-                                ? const Color(0xFF1E3A5F)
-                                : Colors.grey[300]!,
-                            width: _showFileError || _selectedFilePath != null
-                                ? 2
-                                : 1,
+                            color: _showFileError ? Colors.red : _selectedFilePath != null
+                                ? const Color(0xFF1E3A5F) : Colors.grey[300]!,
+                            width: _showFileError || _selectedFilePath != null ? 2 : 1,
                           ),
                           borderRadius: BorderRadius.circular(16),
-                          color: _selectedFilePath != null
-                              ? null
-                              : _showFileError
-                              ? Colors.red[50]
-                              : Colors.grey[50],
+                          color: _selectedFilePath != null ? null : _showFileError ? Colors.red[50] : Colors.grey[50],
                         ),
                         child: _selectedFilePath != null
                             ? ClipRRect(
@@ -552,18 +428,10 @@ class _UploadPageState extends State<UploadPage> {
                                 child: Stack(
                                   fit: StackFit.expand,
                                   children: [
-                                    Image.file(
-                                      File(_selectedFilePath!),
-                                      fit: BoxFit.cover,
-                                    ),
-                                    Container(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.25,
-                                      ),
-                                    ),
+                                    Image.file(File(_selectedFilePath!), fit: BoxFit.cover),
+                                    Container(color: Colors.black.withValues(alpha: 0.25)),
                                     Positioned(
-                                      bottom: 8,
-                                      right: 8,
+                                      bottom: 8, right: 8,
                                       child: GestureDetector(
                                         onTap: () => setState(() {
                                           _selectedFilePath = null;
@@ -572,33 +440,19 @@ class _UploadPageState extends State<UploadPage> {
                                           _selectedImage = null;
                                         }),
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
-                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: Colors.black54,
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
+                                            borderRadius: BorderRadius.circular(20),
                                           ),
-                                          child: const Text(
-                                            'Ganti foto',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 11,
-                                            ),
-                                          ),
+                                          child: const Text('Ganti foto',
+                                              style: TextStyle(color: Colors.white, fontSize: 11)),
                                         ),
                                       ),
                                     ),
                                     const Align(
                                       alignment: Alignment.center,
-                                      child: Icon(
-                                        Icons.check_circle,
-                                        color: Colors.white,
-                                        size: 36,
-                                      ),
+                                      child: Icon(Icons.check_circle, color: Colors.white, size: 36),
                                     ),
                                   ],
                                 ),
@@ -606,30 +460,14 @@ class _UploadPageState extends State<UploadPage> {
                             : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
-                                    Icons.add_photo_alternate,
-                                    size: 44,
-                                    color: _showFileError
-                                        ? Colors.red[300]
-                                        : Colors.grey[400],
-                                  ),
+                                  Icon(Icons.add_photo_alternate, size: 44,
+                                      color: _showFileError ? Colors.red[300] : Colors.grey[400]),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    'Tap untuk ambil foto',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: _showFileError
-                                          ? Colors.red[700]
-                                          : Colors.grey[700],
-                                    ),
-                                  ),
-                                  Text(
-                                    'Kamera akan terbuka otomatis',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
+                                  Text('Tap untuk ambil foto',
+                                      style: TextStyle(fontWeight: FontWeight.w600,
+                                          color: _showFileError ? Colors.red[700] : Colors.grey[700])),
+                                  Text('Kamera akan terbuka otomatis',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                                 ],
                               ),
                       ),
@@ -642,20 +480,10 @@ class _UploadPageState extends State<UploadPage> {
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Colors.red,
-                              size: 16,
-                            ),
+                            const Icon(Icons.error_outline, color: Colors.red, size: 16),
                             const SizedBox(width: 6),
-                            Text(
-                              'Catatan tidak boleh kosong',
-                              style: TextStyle(
-                                color: Colors.red[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                            Text('Catatan tidak boleh kosong',
+                                style: TextStyle(color: Colors.red[700], fontSize: 12, fontWeight: FontWeight.w500)),
                           ],
                         ),
                       ),
@@ -663,28 +491,18 @@ class _UploadPageState extends State<UploadPage> {
                       controller: _writeController,
                       maxLines: 8,
                       onChanged: (_) {
-                        if (_showFileError)
-                          setState(() => _showFileError = false);
+                        if (_showFileError) setState(() => _showFileError = false);
                       },
                       decoration: InputDecoration(
                         hintText: 'Tulis catatanmu di sini...',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: _showFileError
-                                ? Colors.red
-                                : Colors.grey[300]!,
-                          ),
-                        ),
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: _showFileError ? Colors.red : Colors.grey[300]!)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: _showFileError
-                                ? Colors.red
-                                : Colors.grey[300]!,
-                            width: _showFileError ? 2 : 1,
-                          ),
-                        ),
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                                color: _showFileError ? Colors.red : Colors.grey[300]!,
+                                width: _showFileError ? 2 : 1)),
                       ),
                     ),
                   ],
@@ -695,26 +513,17 @@ class _UploadPageState extends State<UploadPage> {
                     key: _titleKey,
                     controller: _titleController,
                     onChanged: (_) {
-                      if (_showTitleError)
-                        setState(() => _showTitleError = false);
+                      if (_showTitleError) setState(() => _showTitleError = false);
                     },
                     decoration: InputDecoration(
                       labelText: 'Judul Catatan *',
-                      labelStyle: TextStyle(
-                        color: _showTitleError ? Colors.red : null,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      labelStyle: TextStyle(color: _showTitleError ? Colors.red : null),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: _showTitleError
-                              ? Colors.red
-                              : Colors.grey[400]!,
-                          width: _showTitleError ? 2 : 1,
-                        ),
-                      ),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: _showTitleError ? Colors.red : Colors.grey[400]!,
+                              width: _showTitleError ? 2 : 1)),
                       errorText: _showTitleError ? 'Judul harus diisi' : null,
                     ),
                   ),
@@ -726,44 +535,28 @@ class _UploadPageState extends State<UploadPage> {
                     decoration: InputDecoration(
                       labelText: 'Deskripsi (opsional)',
                       hintText: 'Ringkasan singkat isi catatan...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   DropdownButtonFormField<String>(
                     value: _selectedSemester,
-                    hint: Text(
-                      'Pilih Semester *',
-                      style: TextStyle(
-                        color: _showSemesterError ? Colors.red : null,
-                      ),
-                    ),
-                    items: _semesters
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
+                    hint: Text('Pilih Semester *',
+                        style: TextStyle(color: _showSemesterError ? Colors.red : null)),
+                    items: _semesters.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                     onChanged: (v) => setState(() {
                       _selectedSemester = v;
                       _showSemesterError = false;
                     }),
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: _showSemesterError
-                              ? Colors.red
-                              : Colors.grey[400]!,
-                          width: _showSemesterError ? 2 : 1,
-                        ),
-                      ),
-                      errorText: _showSemesterError
-                          ? 'Semester harus dipilih'
-                          : null,
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: _showSemesterError ? Colors.red : Colors.grey[400]!,
+                              width: _showSemesterError ? 2 : 1)),
+                      errorText: _showSemesterError ? 'Semester harus dipilih' : null,
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -775,32 +568,19 @@ class _UploadPageState extends State<UploadPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1E3A5F),
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: _isProcessing
                           ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                           : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.upload, color: Colors.white),
                                 SizedBox(width: 8),
-                                Text(
-                                  'Analisis & Validasi',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                Text('Analisis & Validasi',
+                                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                               ],
                             ),
                     ),
@@ -838,14 +618,9 @@ class _UploadPageState extends State<UploadPage> {
             children: [
               Icon(icon, color: isSelected ? Colors.white : Colors.grey[600]),
               const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected ? Colors.white : Colors.grey[600],
-                ),
-              ),
+              Text(label,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                      color: isSelected ? Colors.white : Colors.grey[600])),
             ],
           ),
         ),
