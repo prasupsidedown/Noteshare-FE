@@ -307,7 +307,7 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
                                 style: TextStyle(color: Colors.red),
                               )
                             : DropdownButtonFormField<int>(
-                                value: _selectedCourseId,
+                                initialValue: _selectedCourseId,
                                 hint: const Text('Pilih mata kuliah'),
                                 items: _courses.map((course) {
                                   return DropdownMenuItem<int>(

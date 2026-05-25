@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'pages/splash_page.dart';
-import 'pages/auth_page.dart';
-import 'pages/dashboard_page.dart';
+import 'pages/splash_screen.dart';
+import 'pages/dashboard_screen.dart';
 import 'pages/search_page.dart';
 import 'pages/upload_page.dart';
 import 'pages/course_page.dart';
@@ -30,7 +29,7 @@ class NoteshareApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF3F4F6),
       ),
-      home: const SplashPage(),
+      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -44,10 +43,10 @@ class MainWrapper extends StatefulWidget {
 }
 
 class _MainWrapperState extends State<MainWrapper> {
-  int _currentIndex = 0;
+  final int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    const DashboardPage(),
+    const DashboardScreen(),
     const SearchPage(),
     const UploadPage(),
     const CoursePage(),
@@ -56,9 +55,6 @@ class _MainWrapperState extends State<MainWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-      // TIDAK ADA floatingActionButton DI SINI
-    );
+    return Scaffold(body: _pages[_currentIndex]);
   }
 }

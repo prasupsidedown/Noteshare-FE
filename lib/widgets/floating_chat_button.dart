@@ -17,8 +17,8 @@ class FloatingChatButton extends StatelessWidget {
           builder: (context) => const ChatbotPage(),
         );
       },
-      child: const Icon(Icons.chat_bubble_outline),
       elevation: 2,
+      child: const Icon(Icons.chat_bubble_outline),
     );
   }
 }

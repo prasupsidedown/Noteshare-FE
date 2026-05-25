@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../api.config.dart';
-import 'dashboard_page.dart';
+import 'dashboard_screen.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -16,12 +18,16 @@ class _AuthPageState extends State<AuthPage> {
   bool _isLoading = false;
 
   final TextEditingController _loginEmailController = TextEditingController();
-  final TextEditingController _loginPasswordController = TextEditingController();
+  final TextEditingController _loginPasswordController =
+      TextEditingController();
 
   final TextEditingController _registerNameController = TextEditingController();
-  final TextEditingController _registerEmailController = TextEditingController();
-  final TextEditingController _registerPasswordController = TextEditingController();
-  final TextEditingController _registerConfirmPasswordController = TextEditingController();
+  final TextEditingController _registerEmailController =
+      TextEditingController();
+  final TextEditingController _registerPasswordController =
+      TextEditingController();
+  final TextEditingController _registerConfirmPasswordController =
+      TextEditingController();
 
   static final RegExp _emailRegExp = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
@@ -76,7 +82,7 @@ class _AuthPageState extends State<AuthPage> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const DashboardPage()),
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
           );
         }
       } else {
@@ -86,9 +92,7 @@ class _AuthPageState extends State<AuthPage> {
       }
     } catch (e) {
       debugPrint('Login error: $e');
-      setState(
-        () => _loginError = 'Email atau password salah',
-      );
+      setState(() => _loginError = 'Email atau password salah');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -162,11 +166,13 @@ class _AuthPageState extends State<AuthPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pendaftaran berhasil! Anda masuk otomatis.')),
+            const SnackBar(
+              content: Text('Pendaftaran berhasil! Anda masuk otomatis.'),
+            ),
           );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const DashboardPage()),
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
           );
         }
       } else {
@@ -174,9 +180,7 @@ class _AuthPageState extends State<AuthPage> {
       }
     } catch (e) {
       debugPrint('Register error: $e');
-      setState(
-        () => _registerError = 'Email sudah digunakan',
-      );
+      setState(() => _registerError = 'Email sudah digunakan');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

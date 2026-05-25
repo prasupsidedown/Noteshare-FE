@@ -1,385 +1,205 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../api.config.dart';
-import '../pages/splash_page.dart';
-import '../pages/dashboard_page.dart';
+import 'package:noteshare_flutter/api.config.dart';
+import 'package:noteshare_flutter/pages/dashboard_screen.dart';
+import 'package:noteshare_flutter/pages/explore_page.dart';
+import 'package:noteshare_flutter/pages/upload_page.dart';
+import 'package:noteshare_flutter/semester_state.dart';
 
 class AppDrawer extends StatefulWidget {
-  final int currentIndex;
-  final Function(int) onItemSelected;
-
-  const AppDrawer({
-    super.key,
-    required this.currentIndex,
-    required this.onItemSelected,
-  });
+  const AppDrawer({super.key});
 
   @override
   State<AppDrawer> createState() => _AppDrawerState();
 }
 
 class _AppDrawerState extends State<AppDrawer> {
+  bool _semesterExpanded = false;
   String _userName = '';
   String _userEmail = '';
-  List<Map<String, dynamic>> _courses = [];
-  bool _isCourseExpanded = true;
-  bool _isLoadingCourses = false;
+  final _semesterState = SemesterState();
 
   @override
   void initState() {
     super.initState();
     _loadUser();
-    _loadCourses();
+    _semesterState.addListener(_onSemesterChanged);
   }
 
+  @override
+  void dispose() {
+    _semesterState.removeListener(_onSemesterChanged);
+    super.dispose();
+  }
+
+  void _onSemesterChanged() => setState(() {});
+
   Future<void> _loadUser() async {
-    final userData = await AuthStorage.getUserData();
+    final data = await AuthStorage.getUserData();
     if (mounted) {
       setState(() {
-        _userName = userData['name'] ?? 'User';
-        _userEmail = userData['email'] ?? '';
+        _userName = data['name'] ?? '';
+        _userEmail = data['email'] ?? '';
       });
     }
   }
 
-  Future<void> _loadCourses() async {
-    setState(() => _isLoadingCourses = true);
-    try {
-      final token = await AuthStorage.getToken();
-      if (token == null) return;
-
-      final response = await http.get(
-        Uri.parse(ApiConfig.courses),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> courses = data['data'] ?? [];
-        if (mounted) {
-          setState(() {
-            _courses = List<Map<String, dynamic>>.from(courses);
-            _isLoadingCourses = false;
-          });
-        }
-      } else {
-        if (mounted) setState(() => _isLoadingCourses = false);
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoadingCourses = false);
-    }
+  void _navigate(Widget page) {
+    Navigator.pop(context); // tutup drawer
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
-  Future<void> _handleLogout() async {
-    await AuthStorage.clear();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const SplashPage()),
-        (route) => false,
-      );
-    }
-  }
-
-  Color _getCourseColor(int index) {
-    const colors = [
-      Color(0xFF1E3A5F),
-      Color(0xFF0F9D58),
-      Color(0xFFE65100),
-      Color(0xFF6A1B9A),
-      Color(0xFF00838F),
-      Color(0xFFC62828),
-      Color(0xFF283593),
-      Color(0xFF2E7D32),
-    ];
-    return colors[index % colors.length];
+  void _navigateToDashboard() {
+    Navigator.pop(context); // tutup drawer
+    // Pop semua route sampai tidak bisa lagi (kembali ke root/dashboard)
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override
   Widget build(BuildContext context) {
-    final firstLetter = _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U';
+    final semesters = _semesterState.semesters;
 
     return Drawer(
-      child: Container(
-        color: Colors.white,
+      width: 300,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      child: Column(
+        children: [
+          _DrawerHeader(name: _userName, email: _userEmail),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                const SizedBox(height: 8),
+
+                // Dashboard
+                _DrawerMenuItem(
+                  icon: Icons.dashboard_outlined,
+                  label: 'Dashboard',
+                  onTap: _navigateToDashboard,
+                ),
+
+                // Jelajahi / Explore
+                _DrawerMenuItem(
+                  icon: Icons.explore_outlined,
+                  label: 'Jelajahi Catatan',
+                  onTap: () => _navigate(const ExplorePage()),
+                ),
+
+                // Upload
+                _DrawerMenuItem(
+                  icon: Icons.upload_outlined,
+                  label: 'Upload Catatan',
+                  onTap: () => _navigate(const UploadPage()),
+                ),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Divider(height: 24, color: Color(0xFFEEEEEE)),
+                ),
+
+                // Semester (expandable)
+                _SemesterHeader(
+                  isExpanded: _semesterExpanded,
+                  count: semesters.length,
+                  onTap: () =>
+                      setState(() => _semesterExpanded = !_semesterExpanded),
+                ),
+
+                if (_semesterExpanded)
+                  semesters.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                          child: Text(
+                            'Belum ada semester.\nTambahkan dari Dashboard.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade500,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                          itemCount: semesters.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (_, i) =>
+                              _SemesterChip(item: semesters[i]),
+                        ),
+
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Drawer Header ────────────────────────────────────────────────────────────
+
+class _DrawerHeader extends StatelessWidget {
+  final String name;
+  final String email;
+  const _DrawerHeader({required this.name, required this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7B5FFF), Color(0xFFCB6FFF), Color(0xFFFF8FBF)],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ========== HEADER DRAWER (GRADIENT + MELENGKUNG) ==========
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(25),
-                  bottomRight: Radius.circular(25),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Text(
-                      firstLetter,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A5F),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _userName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,  // ← DISAMAKAN (sebelumnya 18)
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _userEmail,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,  // ← TETAP
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
-            const SizedBox(height: 8),
-
-            // Scrollable menu
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  const SizedBox(height: 4),
-                  _buildDrawerItem(
-                    context: context,
-                    icon: Icons.dashboard,
-                    title: 'Dashboard',
-                    index: 0,
-                  ),
-                  _buildDrawerItem(
-                    context: context,
-                    icon: Icons.search,
-                    title: 'Cari Catatan',
-                    index: 1,
-                  ),
-                  _buildDrawerItem(
-                    context: context,
-                    icon: Icons.upload_file,
-                    title: 'Upload Catatan',
-                    index: 2,
-                  ),
-
-                  // ── Mata Kuliah row + expand toggle ──
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    child: Material(
-                      color: widget.currentIndex == 4
-                          ? Colors.blue.shade50
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: () {
-                                widget.onItemSelected(4);
-                                Navigator.pop(context);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.school,
-                                      color: widget.currentIndex == 4
-                                          ? const Color(0xFF1E3A5F)
-                                          : Colors.grey[600],
-                                      size: 22,  // ← UKURAN ICON DISAMAKAN
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Text(
-                                      'Mata Kuliah',
-                                      style: TextStyle(
-                                        color: widget.currentIndex == 4
-                                            ? const Color(0xFF1E3A5F)
-                                            : Colors.grey[600],
-                                        fontWeight: widget.currentIndex == 4
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        fontSize: 14,  // ← DISAMAKAN
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (_courses.isNotEmpty)
-                            InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: () => setState(
-                                () => _isCourseExpanded = !_isCourseExpanded,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Icon(
-                                  _isCourseExpanded
-                                      ? Icons.expand_less
-                                      : Icons.expand_more,
-                                  color: Colors.grey[500],
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Sub-list matkul
-                  if (_courses.isNotEmpty && _isCourseExpanded)
-                    ..._courses.asMap().entries.map((entry) {
-                      final idx = entry.key;
-                      final course = entry.value;
-                      final color = _getCourseColor(idx);
-                      final initial = (course['name'] as String).isNotEmpty
-                          ? (course['name'] as String)[0].toUpperCase()
-                          : '?';
-
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                          left: 20,
-                          right: 8,
-                          bottom: 2,
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () {
-                            widget.onItemSelected(4);
-                            Navigator.pop(context);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 15,
-                                  backgroundColor: color,
-                                  child: Text(
-                                    initial,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        course['name'] ?? '',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF333333),
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (course['semester'] != null)
-                                        Text(
-                                          course['semester'],
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[500],
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
-
-                  if (_isLoadingCourses)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 56,
-                        top: 4,
-                        bottom: 4,
-                      ),
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    ),
-
-                  _buildDrawerItem(
-                    context: context,
-                    icon: Icons.person,
-                    title: 'Profil',
-                    index: 3,
-                  ),
-
-                  const SizedBox(height: 16),
-                  const Divider(height: 1),
-                  const SizedBox(height: 8),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: ListTile(
-                      leading: const Icon(Icons.logout, color: Colors.red, size: 22),  // ← UKURAN ICON DISAMAKAN
-                      title: const Text(
-                        'Logout',
-                        style: TextStyle(color: Colors.red, fontSize: 14),  // ← DISAMAKAN
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      onTap: _handleLogout,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+            const SizedBox(height: 4),
+            Container(
+              width: 54,
+              height: 54,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.person,
+                color: Color(0xFF7B5FFF),
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              name.isNotEmpty ? name : 'Pengguna',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              email,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ],
@@ -387,36 +207,152 @@ class _AppDrawerState extends State<AppDrawer> {
       ),
     );
   }
+}
 
-  Widget _buildDrawerItem({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required int index,
-  }) {
-    final isSelected = widget.currentIndex == index;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isSelected ? const Color(0xFF1E3A5F) : Colors.grey[600],
-          size: 22,  // ← UKURAN ICON DISAMAKAN (sebelumnya default 24)
+// ─── Menu Item ────────────────────────────────────────────────────────────────
+
+class _DrawerMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  const _DrawerMenuItem({required this.icon, required this.label, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: const Color(0xFF7B5FFF)),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+          ],
         ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFF1E3A5F) : Colors.grey[600],
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,  // ← DISAMAKAN (sebelumnya default)
+      ),
+    );
+  }
+}
+
+// ─── Semester Header ──────────────────────────────────────────────────────────
+
+class _SemesterHeader extends StatelessWidget {
+  final bool isExpanded;
+  final int count;
+  final VoidCallback onTap;
+  const _SemesterHeader({
+    required this.isExpanded,
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.school_outlined,
+              size: 20,
+              color: Color(0xFF7B5FFF),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Text(
+                'Semester Saya',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+            ),
+            if (count > 0)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7B5FFF).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF7B5FFF),
+                  ),
+                ),
+              ),
+            Icon(
+              isExpanded ? Icons.expand_less : Icons.expand_more,
+              size: 20,
+              color: Colors.grey.shade500,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Semester Chip (compact) ──────────────────────────────────────────────────
+
+class _SemesterChip extends StatelessWidget {
+  final SemesterItem item;
+  const _SemesterChip({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: item.color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: item.color.withValues(alpha: 0.4), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: item.color,
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
-        tileColor: isSelected ? Colors.blue.shade50 : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        onTap: () {
-          widget.onItemSelected(index);
-          Navigator.pop(context);
-        },
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              item.name,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: item.color.withValues(alpha: 0.9),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text(
+            item.code,
+            style: TextStyle(
+              fontSize: 11,
+              color: item.color.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
       ),
     );
   }

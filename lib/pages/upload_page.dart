@@ -1,8 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
-import 'analysis_result_page.dart';
+import 'package:mime/mime.dart';
+import 'package:noteshare_flutter/api.config.dart';
+import 'package:noteshare_flutter/semester_state.dart';
+import 'package:noteshare_flutter/widgets/app_drawer.dart';
 
 class UploadPage extends StatefulWidget {
   const UploadPage({super.key});
@@ -12,581 +17,488 @@ class UploadPage extends StatefulWidget {
 }
 
 class _UploadPageState extends State<UploadPage> {
-  String _selectedMethod = 'upload';
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _writeController = TextEditingController();
-  String? _selectedSemester;
+  static final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>();
 
-  String? _selectedFileName;
-  int? _selectedFileSize;
-  String? _selectedFilePath;
-  XFile? _selectedImage;
-  bool _isProcessing = false;
+  int _selectedTab = 0; // 0=Kamera, 1=Tulis, 2=Upload
 
-  bool _showTitleError = false;
-  bool _showSemesterError = false;
-  bool _showFileError = false;
+  final TextEditingController _judulController = TextEditingController();
+  final TextEditingController _deskripsiController = TextEditingController();
+  final TextEditingController _tulisController = TextEditingController();
 
-  final List<String> _semesters = [
-    'Semester 1', 'Semester 2', 'Semester 3', 'Semester 4',
-    'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8',
-  ];
+  SemesterItem? _selectedSemester;
+  bool _semesterExpanded = false;
+  bool _isLoading = false;
 
-  final _titleKey = GlobalKey();
-  final _fileKey = GlobalKey();
-  final ScrollController _scrollController = ScrollController();
+  File? _capturedImage;
+  PlatformFile? _pickedFile;
+
+  final _semesterState = SemesterState();
+
+  @override
+  void initState() {
+    super.initState();
+    _semesterState.addListener(_onSemesterChanged);
+  }
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _writeController.dispose();
-    _scrollController.dispose();
+    _judulController.dispose();
+    _deskripsiController.dispose();
+    _tulisController.dispose();
+    _semesterState.removeListener(_onSemesterChanged);
     super.dispose();
   }
 
-  void _showSnackbar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(isError ? Icons.error_outline : Icons.info_outline, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: isError ? Colors.red[700] : Colors.grey[800],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(12),
-      ),
-    );
-  }
-
-  Future<void> _proceedToUpload() async {
-    setState(() {
-      _showTitleError = false;
-      _showSemesterError = false;
-      _showFileError = false;
-    });
-
-    bool hasError = false;
-
-    if (_selectedMethod == 'tulis') {
-      if (_writeController.text.trim().isEmpty) {
-        setState(() => _showFileError = true);
-        hasError = true;
-      }
+  void _onSemesterChanged() {
+    // Reset jika semester yang dipilih dihapus
+    if (_selectedSemester != null) {
+      final stillExists = _semesterState.semesters.any(
+        (s) => s.id == _selectedSemester!.id,
+      );
+      if (!stillExists) setState(() => _selectedSemester = null);
     } else {
-      if (_selectedFilePath == null) {
-        setState(() => _showFileError = true);
-        hasError = true;
-      }
-    }
-
-    if (_titleController.text.trim().isEmpty) {
-      setState(() => _showTitleError = true);
-      hasError = true;
-    }
-
-    if (_selectedSemester == null) {
-      setState(() => _showSemesterError = true);
-      hasError = true;
-    }
-
-    if (hasError) {
-      if (_showFileError) {
-        _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-        final msg = _selectedMethod == 'kamera'
-            ? 'Pilih foto terlebih dahulu (tap area foto di atas)'
-            : _selectedMethod == 'tulis'
-                ? 'Tulis catatan terlebih dahulu'
-                : 'Pilih file terlebih dahulu (tap area upload di atas)';
-        _showSnackbar(msg, isError: true);
-      } else if (_showTitleError) {
-        _showSnackbar('Judul catatan harus diisi', isError: true);
-      } else {
-        _showSnackbar('Pilih semester terlebih dahulu', isError: true);
-      }
-      return;
-    }
-
-    setState(() => _isProcessing = true);
-
-    String? finalFilePath = _selectedFilePath;
-    String? finalFileName = _selectedFileName;
-    int? finalFileSize = _selectedFileSize;
-
-    if (_selectedMethod == 'tulis') {
-      try {
-        final tempDir = Directory.systemTemp;
-        final tempFile = File('${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}_note.txt');
-        await tempFile.writeAsString(_writeController.text.trim());
-        finalFilePath = tempFile.path;
-        finalFileName = '${_titleController.text.trim()}.txt';
-        finalFileSize = await tempFile.length();
-      } catch (e) {
-        setState(() => _isProcessing = false);
-        _showSnackbar('Gagal memproses teks: $e', isError: true);
-        return;
-      }
-    }
-
-    setState(() => _isProcessing = false);
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AnalysisResultPage(
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          semester: _selectedSemester!,
-          fileName: finalFileName,
-          fileSize: finalFileSize,
-          imagePath: _selectedImage?.path,
-          filePath: finalFilePath,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      withData: false,
-      withReadStream: false,
-    );
-    if (result != null) {
-      final file = result.files.first;
-      if (file.path == null) {
-        _showSnackbar('Gagal membaca file, coba lagi', isError: true);
-        return;
-      }
-      if (file.size > 50 * 1024 * 1024) {
-        _showSnackbar('File maksimal 50MB', isError: true);
-        return;
-      }
-      setState(() {
-        _selectedFileName = file.name;
-        _selectedFileSize = file.size;
-        _selectedFilePath = file.path;
-        _selectedMethod = 'upload';
-        _showFileError = false;
-        if (_titleController.text.trim().isEmpty) {
-          _titleController.text = file.name.replaceAll(RegExp(r'\.[^.]*$'), '');
-          _showTitleError = false;
-        }
-      });
+      setState(() {});
     }
   }
 
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final image = await picker.pickImage(
+  Future<void> _openCamera() async {
+    final picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
     );
-    if (image != null) {
-      final file = File(image.path);
-      final size = await file.length();
-      if (size > 50 * 1024 * 1024) {
-        _showSnackbar('File gambar maksimal 50MB', isError: true);
-        return;
+    if (photo != null) setState(() => _capturedImage = File(photo.path));
+  }
+
+  Future<void> _openFilePicker() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: [
+        'pdf',
+        'doc',
+        'docx',
+        'ppt',
+        'pptx',
+        'jpg',
+        'jpeg',
+        'png',
+      ],
+    );
+    if (result != null && result.files.isNotEmpty) {
+      setState(() => _pickedFile = result.files.first);
+    }
+  }
+
+  void _onTabChanged(int i) => setState(() => _selectedTab = i);
+
+  /// Upload ke backend Go: POST /api/v1/notes (multipart/form-data)
+  Future<void> _handleUpload() async {
+    final judul = _judulController.text.trim();
+
+    if (judul.isEmpty) {
+      _showSnack('Isi Judul Catatan terlebih dahulu');
+      return;
+    }
+    if (_selectedSemester == null) {
+      _showSnack('Pilih Semester terlebih dahulu');
+      return;
+    }
+
+    // Tentukan file yang akan diupload
+    File? fileToUpload;
+    String? fileName;
+
+    if (_selectedTab == 0 && _capturedImage != null) {
+      fileToUpload = _capturedImage;
+      fileName = 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    } else if (_selectedTab == 1 && _tulisController.text.trim().isNotEmpty) {
+      // Simpan teks sebagai file .txt sementara
+      final tempDir = Directory.systemTemp;
+      final tempFile = File(
+        '${tempDir.path}/note_${DateTime.now().millisecondsSinceEpoch}.txt',
+      );
+      await tempFile.writeAsString(_tulisController.text.trim());
+      fileToUpload = tempFile;
+      fileName = 'catatan_${DateTime.now().millisecondsSinceEpoch}.txt';
+    } else if (_selectedTab == 2 && _pickedFile != null) {
+      fileToUpload = File(_pickedFile!.path!);
+      fileName = _pickedFile!.name;
+    }
+
+    if (fileToUpload == null) {
+      _showSnack('Tambahkan konten terlebih dahulu');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final token = await AuthStorage.getToken();
+      final mimeType =
+          lookupMimeType(fileToUpload.path) ?? 'application/octet-stream';
+      final mimeParts = mimeType.split('/');
+
+      final request = http.MultipartRequest('POST', Uri.parse(ApiConfig.notes));
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Field sesuai CreateNoteRequest di backend
+      request.fields['title'] = judul;
+      request.fields['description'] = _deskripsiController.text.trim();
+      request.fields['course_id'] = _selectedSemester!.id.toString();
+      request.fields['semester'] = _selectedSemester!.name;
+      request.fields['is_public'] = 'true';
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          fileToUpload.path,
+          filename: fileName,
+          contentType: MediaType(mimeParts[0], mimeParts[1]),
+        ),
+      );
+
+      final streamed = await request.send().timeout(
+        const Duration(seconds: 60),
+      );
+      final res = await http.Response.fromStream(streamed);
+
+      if (res.statusCode == 201) {
+        // Tambah note ke SemesterState lokal supaya dashboard langsung update
+        // (tanpa perlu refresh dari server)
+        // ignore: avoid_dynamic_calls
+        // final body = jsonDecode(res.body);
+        // final noteData = body['data'];
+        // _semesterState.addNote(_selectedSemester!.id, NoteItem.fromJson(noteData));
+
+        _showSnack(
+          'Catatan berhasil diupload ke ${_selectedSemester!.name}!',
+          isSuccess: true,
+        );
+        _resetForm();
+      } else {
+        _showSnack('Upload gagal. Coba lagi.');
       }
-      setState(() {
-        _selectedImage = image;
-        _selectedFileName = image.name;
-        _selectedFileSize = size;
-        _selectedFilePath = image.path;
-        _selectedMethod = 'kamera';
-        _showFileError = false;
-        if (_titleController.text.trim().isEmpty) {
-          _titleController.text = image.name.replaceAll(RegExp(r'\.[^.]*$'), '');
-          _showTitleError = false;
-        }
-      });
+    } on SocketException {
+      _showSnack('Tidak ada koneksi internet.');
+    } catch (e) {
+      _showSnack('Terjadi error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  void _resetForm() {
+    _judulController.clear();
+    _deskripsiController.clear();
+    _tulisController.clear();
+    setState(() {
+      _capturedImage = null;
+      _pickedFile = null;
+      _selectedSemester = null;
+      _selectedTab = 0;
+      _semesterExpanded = false;
+    });
   }
 
-  IconData _getFileIcon(String? fileName) {
-    if (fileName == null) return Icons.insert_drive_file;
-    final ext = fileName.split('.').last.toLowerCase();
-    switch (ext) {
-      case 'pdf': return Icons.picture_as_pdf;
-      case 'doc': case 'docx': return Icons.article;
-      case 'ppt': case 'pptx': return Icons.slideshow;
-      case 'xls': case 'xlsx': return Icons.table_chart;
-      case 'jpg': case 'jpeg': case 'png': return Icons.image;
-      case 'txt': return Icons.text_snippet;
-      default: return Icons.insert_drive_file;
-    }
-  }
-
-  Color _getFileColor(String? fileName) {
-    if (fileName == null) return Colors.grey;
-    final ext = fileName.split('.').last.toLowerCase();
-    switch (ext) {
-      case 'pdf': return Colors.red;
-      case 'doc': case 'docx': return Colors.blue;
-      case 'ppt': case 'pptx': return Colors.orange;
-      case 'xls': case 'xlsx': return Colors.green;
-      case 'jpg': case 'jpeg': case 'png': return Colors.purple;
-      default: return Colors.grey[600]!;
-    }
+  void _showSnack(String msg, {bool isSuccess = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isSuccess
+            ? const Color(0xFF4CAF50)
+            : const Color(0xFF7B5FFF),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: const AppDrawer(),
+      backgroundColor: Colors.white,
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF1E3A5F), Color(0xFF3B82F6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
-              ),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Upload Catatan',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-                SizedBox(height: 2),
-                Text('Bagikan catatan kuliahmu',
-                    style: TextStyle(fontSize: 12, color: Colors.white70)),
-              ],
-            ),
-          ),
+          _UploadHeader(scaffoldKey: _scaffoldKey),
           Expanded(
             child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      _buildMethodCard(Icons.camera_alt, 'Kamera', 'kamera'),
-                      const SizedBox(width: 12),
-                      _buildMethodCard(Icons.edit_note, 'Tulis', 'tulis'),
-                      const SizedBox(width: 12),
-                      _buildMethodCard(Icons.upload_file, 'Upload', 'upload'),
-                    ],
+                  const Text(
+                    'Semester Saya',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A2E),
+                    ),
                   ),
-                  const SizedBox(height: 16),
-
-                  if (_selectedMethod == 'upload') ...[
-                    if (_showFileError)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.red, size: 16),
-                            const SizedBox(width: 6),
-                            Text('Pilih file terlebih dahulu',
-                                style: TextStyle(color: Colors.red[700], fontSize: 12, fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ),
-                    GestureDetector(
-                      key: _fileKey,
-                      onTap: _pickFile,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: _showFileError
-                                ? Colors.red
-                                : _selectedFilePath != null
-                                    ? const Color(0xFF1E3A5F)
-                                    : Colors.grey[300]!,
-                            width: _showFileError || _selectedFilePath != null ? 2 : 1,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          color: _showFileError
-                              ? Colors.red[50]
-                              : _selectedFilePath != null
-                                  ? const Color(0xFF1E3A5F).withValues(alpha: 0.05)
-                                  : Colors.grey[50],
-                        ),
-                        child: _selectedFilePath != null
-                            ? Row(
-                                children: [
-                                  Container(
-                                    width: 52,
-                                    height: 52,
-                                    decoration: BoxDecoration(
-                                      color: _getFileColor(_selectedFileName).withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(_getFileIcon(_selectedFileName),
-                                        color: _getFileColor(_selectedFileName), size: 30),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(_selectedFileName ?? '',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                                color: Color(0xFF1E3A5F)),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis),
-                                        const SizedBox(height: 4),
-                                        Text(_selectedFileSize != null ? _formatFileSize(_selectedFileSize!) : '',
-                                            style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    children: [
-                                      const Icon(Icons.check_circle, color: Color(0xFF1E3A5F), size: 22),
-                                      const SizedBox(height: 4),
-                                      GestureDetector(
-                                        onTap: () => setState(() {
-                                          _selectedFilePath = null;
-                                          _selectedFileName = null;
-                                          _selectedFileSize = null;
-                                        }),
-                                        child: Text('Ganti',
-                                            style: TextStyle(fontSize: 11, color: Colors.grey[500],
-                                                decoration: TextDecoration.underline)),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.cloud_upload_outlined,
-                                      size: 44,
-                                      color: _showFileError ? Colors.red[300] : Colors.grey[400]),
-                                  const SizedBox(height: 10),
-                                  Text('Tap di sini untuk pilih file',
-                                      style: TextStyle(fontWeight: FontWeight.w600,
-                                          color: _showFileError ? Colors.red[700] : Colors.grey[700])),
-                                  const SizedBox(height: 4),
-                                  Text('PDF, DOC, PPT, JPG, PNG (maks 50MB)',
-                                      style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ],
-
-                  if (_selectedMethod == 'kamera') ...[
-                    if (_showFileError)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.red, size: 16),
-                            const SizedBox(width: 6),
-                            Text('Pilih foto terlebih dahulu',
-                                style: TextStyle(color: Colors.red[700], fontSize: 12, fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ),
-                    GestureDetector(
-                      onTap: _pickImage,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: double.infinity,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: _showFileError ? Colors.red : _selectedFilePath != null
-                                ? const Color(0xFF1E3A5F) : Colors.grey[300]!,
-                            width: _showFileError || _selectedFilePath != null ? 2 : 1,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          color: _selectedFilePath != null ? null : _showFileError ? Colors.red[50] : Colors.grey[50],
-                        ),
-                        child: _selectedFilePath != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    Image.file(File(_selectedFilePath!), fit: BoxFit.cover),
-                                    Container(color: Colors.black.withValues(alpha: 0.25)),
-                                    Positioned(
-                                      bottom: 8, right: 8,
-                                      child: GestureDetector(
-                                        onTap: () => setState(() {
-                                          _selectedFilePath = null;
-                                          _selectedFileName = null;
-                                          _selectedFileSize = null;
-                                          _selectedImage = null;
-                                        }),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black54,
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                          child: const Text('Ganti foto',
-                                              style: TextStyle(color: Colors.white, fontSize: 11)),
-                                        ),
-                                      ),
-                                    ),
-                                    const Align(
-                                      alignment: Alignment.center,
-                                      child: Icon(Icons.check_circle, color: Colors.white, size: 36),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add_photo_alternate, size: 44,
-                                      color: _showFileError ? Colors.red[300] : Colors.grey[400]),
-                                  const SizedBox(height: 8),
-                                  Text('Tap untuk ambil foto',
-                                      style: TextStyle(fontWeight: FontWeight.w600,
-                                          color: _showFileError ? Colors.red[700] : Colors.grey[700])),
-                                  Text('Kamera akan terbuka otomatis',
-                                      style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ],
-
-                  if (_selectedMethod == 'tulis') ...[
-                    if (_showFileError)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.red, size: 16),
-                            const SizedBox(width: 6),
-                            Text('Catatan tidak boleh kosong',
-                                style: TextStyle(color: Colors.red[700], fontSize: 12, fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ),
-                    TextField(
-                      controller: _writeController,
-                      maxLines: 8,
-                      onChanged: (_) {
-                        if (_showFileError) setState(() => _showFileError = false);
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Tulis catatanmu di sini...',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: _showFileError ? Colors.red : Colors.grey[300]!)),
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                                color: _showFileError ? Colors.red : Colors.grey[300]!,
-                                width: _showFileError ? 2 : 1)),
-                      ),
-                    ),
-                  ],
-
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Kelola mata kuliah dan catatan per semester',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF7B5FFF)),
+                  ),
                   const SizedBox(height: 20),
 
-                  TextField(
-                    key: _titleKey,
-                    controller: _titleController,
-                    onChanged: (_) {
-                      if (_showTitleError) setState(() => _showTitleError = false);
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Judul Catatan *',
-                      labelStyle: TextStyle(color: _showTitleError ? Colors.red : null),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                              color: _showTitleError ? Colors.red : Colors.grey[400]!,
-                              width: _showTitleError ? 2 : 1)),
-                      errorText: _showTitleError ? 'Judul harus diisi' : null,
-                    ),
-                  ),
+                  _TabBar(selected: _selectedTab, onChanged: _onTabChanged),
+                  const SizedBox(height: 20),
+
+                  _buildContentArea(),
                   const SizedBox(height: 16),
 
-                  TextField(
-                    controller: _descriptionController,
+                  _InputField(
+                    controller: _judulController,
+                    hint: 'Judul Catatan *',
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 12),
+                  _InputField(
+                    controller: _deskripsiController,
+                    hint: 'Deskripsi (Opsional)',
                     maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: 'Deskripsi (opsional)',
-                      hintText: 'Ringkasan singkat isi catatan...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  DropdownButtonFormField<String>(
-                    value: _selectedSemester,
-                    hint: Text('Pilih Semester *',
-                        style: TextStyle(color: _showSemesterError ? Colors.red : null)),
-                    items: _semesters.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                    onChanged: (v) => setState(() {
-                      _selectedSemester = v;
-                      _showSemesterError = false;
-                    }),
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                              color: _showSemesterError ? Colors.red : Colors.grey[400]!,
-                              width: _showSemesterError ? 2 : 1)),
-                      errorText: _showSemesterError ? 'Semester harus dipilih' : null,
-                    ),
+                  // Semester dropdown dari SemesterState (data real dari backend)
+                  ListenableBuilder(
+                    listenable: _semesterState,
+                    builder: (context, _) {
+                      final semesters = _semesterState.semesters;
+                      if (semesters.isEmpty) return _EmptySemesterHint();
+                      return _SemesterPicker(
+                        selected: _selectedSemester,
+                        items: semesters,
+                        isExpanded: _semesterExpanded,
+                        onToggle: () => setState(
+                          () => _semesterExpanded = !_semesterExpanded,
+                        ),
+                        onSelect: (val) => setState(() {
+                          _selectedSemester = val;
+                          _semesterExpanded = false;
+                        }),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 28),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isProcessing ? null : _proceedToUpload,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A5F),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: _isProcessing
-                          ? const SizedBox(
-                              width: 20, height: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.upload, color: Colors.white),
-                                SizedBox(width: 8),
-                                Text('Analisis & Validasi',
-                                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                 ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomSheet: _BottomBar(onTap: _handleUpload, isLoading: _isLoading),
+      floatingActionButton: _FloatingChat(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  Widget _buildContentArea() {
+    switch (_selectedTab) {
+      case 0:
+        return _buildKameraArea();
+      case 1:
+        return _buildTulisArea();
+      case 2:
+        return _buildUploadArea();
+      default:
+        return const SizedBox();
+    }
+  }
+
+  Widget _buildKameraArea() {
+    if (_capturedImage != null) {
+      return Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.file(
+              _capturedImage!,
+              width: double.infinity,
+              height: 220,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: () => setState(() => _capturedImage = null),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 18),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: _openCamera,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7B5FFF),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                    SizedBox(width: 4),
+                    Text(
+                      'Ambil ulang',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return _EmptyPreview(
+      icon: Icons.add_photo_alternate_outlined,
+      label: 'Tap untuk ambil foto',
+      sublabel: 'Kamera akan terbuka otomatis',
+      onTap: _openCamera,
+    );
+  }
+
+  Widget _buildTulisArea() {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 160),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF7B5FFF), width: 1.5),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: TextField(
+        controller: _tulisController,
+        maxLines: null,
+        minLines: 6,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF1A1A2E),
+          height: 1.6,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Tulis catatan kuliahmu di sini...',
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUploadArea() {
+    if (_pickedFile != null) {
+      final isImage = [
+        'jpg',
+        'jpeg',
+        'png',
+      ].contains(_pickedFile!.extension?.toLowerCase());
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEEEF8),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF7B5FFF), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF7B5FFF).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                isImage ? Icons.image_outlined : Icons.picture_as_pdf,
+                color: const Color(0xFF7B5FFF),
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _pickedFile!.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _pickedFile!.size > 0
+                        ? '${(_pickedFile!.size / 1024).toStringAsFixed(1)} KB'
+                        : 'File dipilih',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => setState(() => _pickedFile = null),
+              child: const Icon(Icons.close, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+    return _EmptyPreview(
+      icon: Icons.upload_file_outlined,
+      label: 'Tap disini untuk pilih file',
+      sublabel: 'PDF, DOC, PPT, JPG, PNG (Maks 50 Mb)',
+      onTap: _openFilePicker,
+    );
+  }
+}
+
+// ─── Empty Semester Hint ──────────────────────────────────────────────────────
+
+class _EmptySemesterHint extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFB74D), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Color(0xFFFF9800), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Belum ada semester. Buat semester dulu di Dashboard.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.orange.shade800,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -594,36 +506,452 @@ class _UploadPageState extends State<UploadPage> {
       ),
     );
   }
+}
 
-  Widget _buildMethodCard(IconData icon, String label, String value) {
-    final isSelected = _selectedMethod == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() {
-          _selectedMethod = value;
-          _selectedFilePath = null;
-          _selectedFileName = null;
-          _selectedFileSize = null;
-          _selectedImage = null;
-          _showFileError = false;
-        }),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF1E3A5F) : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: isSelected ? null : Border.all(color: Colors.grey[300]!),
+// ─── Semester Picker ──────────────────────────────────────────────────────────
+
+class _SemesterPicker extends StatelessWidget {
+  final SemesterItem? selected;
+  final List<SemesterItem> items;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final ValueChanged<SemesterItem> onSelect;
+
+  const _SemesterPicker({
+    required this.selected,
+    required this.items,
+    required this.isExpanded,
+    required this.onToggle,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onToggle,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF7B5FFF), width: 1.5),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  selected?.name ?? 'Pilih Semester *',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: selected != null
+                        ? const Color(0xFF1A1A2E)
+                        : Colors.grey.shade400,
+                  ),
+                ),
+                Icon(
+                  isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                  color: const Color(0xFF1A1A2E),
+                ),
+              ],
+            ),
           ),
+        ),
+        if (isExpanded)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF7B5FFF), width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 14, 16, 8),
+                  child: Text(
+                    'Pilih Semester',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
+                ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                ...items.map((s) {
+                  final isSel = s.id == selected?.id;
+                  return InkWell(
+                    onTap: () => onSelect(s),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSel
+                            ? const Color(0xFF7B5FFF).withValues(alpha: 0.08)
+                            : Colors.transparent,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: s.color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            s.name,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSel
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: isSel
+                                  ? const Color(0xFF7B5FFF)
+                                  : const Color(0xFF1A1A2E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ─── Empty Preview ────────────────────────────────────────────────────────────
+
+class _EmptyPreview extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String sublabel;
+  final VoidCallback onTap;
+
+  const _EmptyPreview({
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 160,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEEEF8),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFCCCCE8), width: 1.5),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 42, color: Colors.grey.shade400),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              sublabel,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+class _UploadHeader extends StatelessWidget {
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  const _UploadHeader({required this.scaffoldKey});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7B5FFF), Color(0xFFCB6FFF), Color(0xFFFF8FBF)],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: isSelected ? Colors.white : Colors.grey[600]),
-              const SizedBox(height: 4),
-              Text(label,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                      color: isSelected ? Colors.white : Colors.grey[600])),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () => scaffoldKey.currentState?.openDrawer(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _line(22),
+                        const SizedBox(height: 5),
+                        _line(16),
+                        const SizedBox(height: 5),
+                        _line(22),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Upload Catatan',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'Bagikan catatan kuliahmu',
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _line(double w) => Container(
+    width: w,
+    height: 2.5,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(2),
+    ),
+  );
+}
+
+// ─── Tab Bar ──────────────────────────────────────────────────────────────────
+
+class _TabBar extends StatelessWidget {
+  final int selected;
+  final ValueChanged<int> onChanged;
+  const _TabBar({required this.selected, required this.onChanged});
+
+  static const _tabs = [
+    {'icon': Icons.camera_alt_outlined, 'label': 'Kamera'},
+    {'icon': Icons.edit_outlined, 'label': 'Tulis'},
+    {'icon': Icons.upload_outlined, 'label': 'Upload'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(_tabs.length, (i) {
+        final sel = i == selected;
+        return Padding(
+          padding: EdgeInsets.only(right: i < _tabs.length - 1 ? 12 : 0),
+          child: GestureDetector(
+            onTap: () => onChanged(i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: sel
+                    ? const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF7B5FFF), Color(0xFFFF8FBF)],
+                      )
+                    : null,
+                color: sel ? null : const Color(0xFFF0F0F5),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _tabs[i]['icon'] as IconData,
+                    color: sel ? Colors.white : const Color(0xFF9E9E9E),
+                    size: 28,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _tabs[i]['label'] as String,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: sel ? Colors.white : const Color(0xFF9E9E9E),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// ─── Input Field ──────────────────────────────────────────────────────────────
+
+class _InputField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final int maxLines;
+  const _InputField({
+    required this.controller,
+    required this.hint,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A2E)),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF7B5FFF), width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF7B5FFF), width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+    );
+  }
+}
+
+// ─── Bottom Bar ───────────────────────────────────────────────────────────────
+
+class _BottomBar extends StatelessWidget {
+  final VoidCallback onTap;
+  final bool isLoading;
+  const _BottomBar({required this.onTap, this.isLoading = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isLoading ? null : onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isLoading
+                ? [const Color(0xFFAAAAAA), const Color(0xFFBBBBBB)]
+                : [const Color(0xFF5B4FCF), const Color(0xFF7B5FFF)],
+          ),
+        ),
+        child: isLoading
+            ? const Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                ),
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.upload_outlined, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Upload Catatan',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+// ─── Floating Chat ────────────────────────────────────────────────────────────
+
+class _FloatingChat extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: const Color(0xFF7B5FFF),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7B5FFF).withValues(alpha: 0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.chat_bubble_outline_rounded,
+        color: Colors.white,
+        size: 22,
       ),
     );
   }

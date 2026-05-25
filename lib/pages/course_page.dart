@@ -266,7 +266,7 @@ class _CoursePageState extends State<CoursePage> {
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                value: _selectedSemester,
+                initialValue: _selectedSemester,
                 hint: const Text('Pilih Semester *'),
                 items: _semesters
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))

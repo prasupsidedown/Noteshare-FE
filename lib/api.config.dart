@@ -16,8 +16,9 @@ class ApiConfig {
   static String get notes => '$baseUrl/notes';
   static String get myNotes => '$baseUrl/notes/my';
 
-  // Courses
+  // Courses (= Semester)
   static String get courses => '$baseUrl/courses';
+  static String courseById(int id) => '$baseUrl/courses/$id';
 
   // Todos
   static String get myTodos => '$baseUrl/todos/my';
