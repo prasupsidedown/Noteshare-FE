@@ -4,6 +4,7 @@ import 'package:noteshare_flutter/pages/dashboard_screen.dart';
 import 'package:noteshare_flutter/pages/explore_page.dart';
 import 'package:noteshare_flutter/pages/upload_page.dart';
 import 'package:noteshare_flutter/semester_state.dart';
+import 'package:noteshare_flutter/pages/profile_page.dart';
 
 class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
@@ -79,7 +80,7 @@ class _AppDrawerState extends State<AppDrawer> {
 
                 // Jelajahi / Explore
                 _DrawerMenuItem(
-                  icon: Icons.explore_outlined,
+                  icon: Icons.search_outlined,
                   label: 'Jelajahi Catatan',
                   onTap: () => _navigate(const ExplorePage()),
                 ),
@@ -133,11 +134,26 @@ class _AppDrawerState extends State<AppDrawer> {
               ],
             ),
           ),
+
+          const Divider(
+          height: 1,
+          color: Color(0xFFEEEEEE),
+        ),
+
+        _DrawerMenuItem(
+          icon: Icons.person_outline,
+          label: 'Profile Saya',
+          onTap: () => _navigate(const ProfilePage()),
+        ),
+
+        const SizedBox(height: 12),
         ],
       ),
     );
   }
 }
+
+
 
 // ─── Drawer Header ────────────────────────────────────────────────────────────
 
@@ -155,7 +171,10 @@ class _DrawerHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF7B5FFF), Color(0xFFCB6FFF), Color(0xFFFF8FBF)],
+          colors: [Color(0xFF7B5FFF), Color.fromARGB(255, 98, 175, 252)],
+        ),
+        borderRadius: BorderRadius.only(
+        bottomRight: Radius.circular(40),
         ),
       ),
       child: SafeArea(
@@ -171,43 +190,59 @@ class _DrawerHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Container(
-              width: 54,
-              height: 54,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
+            Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person,
+                  color: Color(0xFF7B5FFF),
+                  size: 30,
+                ),
               ),
-              child: const Icon(
-                Icons.person,
-                color: Color(0xFF7B5FFF),
-                size: 30,
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isNotEmpty ? name : 'Pengguna',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 2),
+
+                    Text(
+                      email,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              name.isNotEmpty ? name : 'Pengguna',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              email,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ]
       ),
-    );
+    ),
+  );
   }
 }
+
 
 // ─── Menu Item ────────────────────────────────────────────────────────────────
 

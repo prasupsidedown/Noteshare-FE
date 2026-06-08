@@ -80,37 +80,11 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background putih
-          Container(color: Colors.white),
-
-          // Blob kiri atas
-          Positioned(
-            top: -60,
-            left: -60,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFD8C6F0).withValues(alpha: 0.5),
-              ),
-            ),
+          Container(
+            color: Colors.white,
           ),
 
-          // Blob kanan bawah
-          Positioned(
-            bottom: -80,
-            right: -60,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFB8D8F0).withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-
+        
           // Accent bar atas (purple-blue gradient)
           Positioned(
             top: 0,
@@ -128,51 +102,51 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // Konten utama
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 48),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 40),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
 
-                  // Logo
-                  Center(
-                    child: Image.asset(
-                      'assets/images/noteshare_logo.png',
-                      width: 100,
-                      height: 100,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                    Center(
+                      child: Image.asset(
+                        'assets/images/logo.png',
                         width: 100,
                         height: 100,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F0FE),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.menu_book_rounded,
-                          size: 56,
-                          color: Color(0xFF3B82F6),
-                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 36),
+                    const SizedBox(height: 36),
 
-                  // Judul
-                  const Text(
-                    'Selamat datang!',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E),
+                    const Text(
+                      'Selamat datang!',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Masuk untuk lanjut ke NOTESHARE',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-                  ),
+
+          const SizedBox(height: 4),
+
+                    const Text(
+                      'Kelola catatan kuliahmu dengan mudah'
+                    ),
 
                   const SizedBox(height: 32),
 
@@ -256,21 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  // Lupa password
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                      child: const Text(
-                        'Lupa password?',
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
+                
 
                   const SizedBox(height: 8),
 
@@ -280,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9B59B6),
+                        backgroundColor: const Color.fromARGB(255, 41, 103, 238),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -362,14 +322,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                  ],
+                ), // Column
+              ), // Container
+            ), // Center
+          ), // SingleChildScrollView
+        ), // SafeArea
+      ],
+    ),
+  );
+}
 
   @override
   void dispose() {

@@ -5,6 +5,7 @@ import 'package:noteshare_flutter/api.config.dart';
 import 'package:noteshare_flutter/semester_state.dart';
 import 'package:noteshare_flutter/widgets/app_drawer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:noteshare_flutter/pages/notification_page.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -135,7 +136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 TextField(
                   controller: nameController,
                   decoration: InputDecoration(
-                    hintText: 'Nama Semester (e.g. Semester 4)',
+                    hintText: 'Nama Semester (Semester 4)',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -149,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 TextField(
                   controller: codeController,
                   decoration: InputDecoration(
-                    hintText: 'Kode (e.g. SMT4)',
+                    hintText: 'Kode (SMT4)',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -455,9 +456,14 @@ class _DashboardHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF7B5FFF), Color(0xFFCB6FFF), Color(0xFFFF8FBF)],
+          colors: [Color(0xFF7B5FFF), Color.fromARGB(255, 98, 175, 252)],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
         ),
       ),
+
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -465,62 +471,76 @@ class _DashboardHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () => scaffoldKey.currentState?.openDrawer(),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _line(22),
-                        const SizedBox(height: 5),
-                        _line(16),
-                        const SizedBox(height: 5),
-                        _line(22),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'DASHBOARD',
-                style: TextStyle(
+            Row(
+              children: [
+                GestureDetector(
+                onTap: () => scaffoldKey.currentState?.openDrawer(),
+                child: const Icon(
+                  Icons.menu_rounded,
                   color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
+                  size: 30,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                userName.isNotEmpty ? 'Halo, $userName!' : 'Halo!',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+
+                const SizedBox(width: 15),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(('DASHBOARD'),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      Text(
+                        userName.isNotEmpty ? 'Halo, $userName!' : 'Halo!',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationPage(),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.40),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_outlined,
+                    color: Color.fromARGB(255, 98, 98, 99),
+                    size: 25,
+                  ),
                 ),
               ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _line(double w) => Container(
@@ -730,7 +750,16 @@ class _NoteRow extends StatelessWidget {
                     color: accentColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(_typeIcon, color: accentColor, size: 20),
+                  child: Text(
+                  note.title.isNotEmpty
+                      ? note.title[0].toUpperCase()
+                      : "N",
+                  style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -740,8 +769,8 @@ class _NoteRow extends StatelessWidget {
                       Text(
                         note.title,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
                           color: Color(0xFF1A1A2E),
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -759,38 +788,23 @@ class _NoteRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 3),
-                        child: Text(
-                          _formatDate(note.uploadedAt),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                      ),
+                      
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                Row(
-                  children: [
-                    Text(
-                      note.fileType.toUpperCase().replaceAll('.', ''),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: accentColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Icon(
-                      Icons.open_in_new,
-                      size: 14,
-                      color: accentColor.withValues(alpha: 0.6),
-                    ),
-                  ],
+                Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Icon(
+                  Icons.chevron_right,
+                  color: accentColor,
+                  size: 18,
+                ),
+              ),
               ],
             ),
           ),

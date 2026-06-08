@@ -8,6 +8,7 @@ import 'package:mime/mime.dart';
 import 'package:noteshare_flutter/api.config.dart';
 import 'package:noteshare_flutter/semester_state.dart';
 import 'package:noteshare_flutter/widgets/app_drawer.dart';
+import 'package:noteshare_flutter/pages/notification_page.dart';
 
 class UploadPage extends StatefulWidget {
   const UploadPage({super.key});
@@ -700,7 +701,11 @@ class _UploadHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF7B5FFF), Color(0xFFCB6FFF), Color(0xFFFF8FBF)],
+          colors: [Color(0xFF7B5FFF), Color.fromARGB(255, 98, 175, 252)],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
         ),
       ),
       child: SafeArea(
@@ -711,50 +716,68 @@ class _UploadHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: () => scaffoldKey.currentState?.openDrawer(),
+                  onTap: () => scaffoldKey.currentState?.openDrawer(),
+                  child: const Icon(
+                    Icons.menu_rounded,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                ),
+
+                  const SizedBox(width: 16),
+
+                  const Expanded(
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _line(22),
-                        const SizedBox(height: 5),
-                        _line(16),
-                        const SizedBox(height: 5),
-                        _line(22),
+                        Text(
+                          'UPLOAD CATATAN',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Bagikan catatan kuliahmu',
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
                       ],
                     ),
                   ),
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 22,
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationPage(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.40),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        color: Color.fromARGB(255, 98, 98, 99),
+                        size: 25,
+                      ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Upload Catatan',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'Bagikan catatan kuliahmu',
-                style: TextStyle(color: Colors.white, fontSize: 13),
               ),
             ],
           ),
@@ -789,6 +812,7 @@ class _TabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(_tabs.length, (i) {
         final sel = i == selected;
         return Padding(
@@ -797,18 +821,31 @@ class _TabBar extends StatelessWidget {
             onTap: () => onChanged(i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 80,
-              height: 80,
+              width: sel ? 88 : 80,
+              height: sel ? 88 : 80,
               decoration: BoxDecoration(
                 gradient: sel
                     ? const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Color(0xFF7B5FFF), Color(0xFFFF8FBF)],
+                        colors: [
+                          Color(0xFF7B5FFF),
+                          Color.fromARGB(255, 98, 175, 252),
+                        ],
                       )
                     : null,
                 color: sel ? null : const Color(0xFFF0F0F5),
                 borderRadius: BorderRadius.circular(18),
+
+                boxShadow: [
+                  BoxShadow(
+                    color: sel
+                        ? const Color(0xFF7B5FFF).withValues(alpha: 0.35)
+                        : Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -889,14 +926,24 @@ class _BottomBar extends StatelessWidget {
     return GestureDetector(
       onTap: isLoading ? null : onTap,
       child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
           gradient: LinearGradient(
             colors: isLoading
                 ? [const Color(0xFFAAAAAA), const Color(0xFFBBBBBB)]
                 : [const Color(0xFF5B4FCF), const Color(0xFF7B5FFF)],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7B5FFF).withValues(alpha: 0.35),
+              blurRadius: 20,
+              spreadRadius: 2,
+              offset: const Offset(0, -5),
+            ),
+          ],
         ),
         child: isLoading
             ? const Center(

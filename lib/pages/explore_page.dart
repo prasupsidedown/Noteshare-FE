@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:noteshare_flutter/api.config.dart';
 import 'package:noteshare_flutter/widgets/app_drawer.dart';
+import 'package:noteshare_flutter/pages/notification_page.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -139,7 +140,11 @@ class _ExploreHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF7B5FFF), Color(0xFFCB6FFF), Color(0xFFFF8FBF)],
+          colors: [Color(0xFF7B5FFF), Color.fromARGB(255, 98, 175, 252)],
+        ),
+        borderRadius: BorderRadius.only(
+        bottomLeft: Radius.circular(40),
+        bottomRight: Radius.circular(40),
         ),
       ),
       child: SafeArea(
@@ -150,51 +155,97 @@ class _ExploreHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () => scaffoldKey.currentState?.openDrawer(),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _line(22),
-                        const SizedBox(height: 5),
-                        _line(16),
-                        const SizedBox(height: 5),
-                        _line(22),
-                      ],
-                    ),
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
+                onTap: () => scaffoldKey.currentState?.openDrawer(),
+                child: const Icon(
+                  Icons.menu_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+
+                const SizedBox(width: 16),
+
+                Expanded(
+                  child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'JELAJAHI CATATAN',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Cari catatan kuliah yang kamu butuhkan',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                  Container(
+                ),
+              ),
+
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationPage(),
+                      ),
+                    );
+                  },
+                  child: Container(
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.25),
+                      color: Colors.white.withValues(alpha: 0.40),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 22,
+                      color: Color.fromARGB(255, 98, 98, 99),
+                      size: 25,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Jelajahi Catatan',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
                 ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.20),
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Catatan publik dari semua mahasiswa',
-                style: TextStyle(color: Colors.white, fontSize: 13),
+              child: TextField(
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'Cari catatan...',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Colors.white,
+                  ),
+                ),
+                style: const TextStyle(color: Colors.white),
               ),
+            ),
             ],
           ),
         ),
@@ -459,7 +510,7 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.explore_outlined, size: 64, color: Colors.grey.shade300),
+          Icon(Icons.search_outlined, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
             'Belum ada catatan publik',
