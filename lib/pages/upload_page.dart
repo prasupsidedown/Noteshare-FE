@@ -931,14 +931,15 @@ class _BottomBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            colors: isLoading
-                ? [const Color(0xFFAAAAAA), const Color(0xFFBBBBBB)]
-                : [const Color(0xFF5B4FCF), const Color(0xFF7B5FFF)],
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF2196F3),
+              Color(0xFF64B5F6),
+            ],
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF7B5FFF).withValues(alpha: 0.35),
+              color: Color.fromARGB(255, 98, 175, 252).withValues(alpha: 0.35),
               blurRadius: 20,
               spreadRadius: 2,
               offset: const Offset(0, -5),

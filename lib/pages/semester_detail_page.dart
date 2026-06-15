@@ -18,7 +18,7 @@ class SemesterDetailPage extends StatefulWidget {
 }
 
 class _SemesterDetailPageState extends State<SemesterDetailPage> {
-  List<Map<String, dynamic>> _courses = [];
+  List<Map<String, dynamic>> _notes = [];
   bool _isLoading = true;
 
   @override
@@ -51,8 +51,17 @@ class _SemesterDetailPageState extends State<SemesterDetailPage> {
           return course['semester'] == widget.semesterName;
         }).toList();
 
+        // Fetch my notes
+        final notesResponse = await http.get(
+          Uri.parse(ApiConfig.myNotes),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'ngrok-skip-browser-warning': 'true',
+          },
+        );
+
         setState(() {
-          _courses = List<Map<String, dynamic>>.from(filteredCourses);
+          _notes = List<Map<String, dynamic>>.from(filteredCourses);
           _isLoading = false;
         });
       } else {
@@ -91,121 +100,124 @@ class _SemesterDetailPageState extends State<SemesterDetailPage> {
         onRefresh: _fetchCoursesBySemester,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : _courses.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.school_outlined,
-                            size: 80, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Belum ada mata kuliah di ${widget.semesterName}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
+            : _notes.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.description_outlined,
+                        size: 80,
+                        color: Colors.deepPurple,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        widget.semesterName,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Buat mata kuliah baru di menu Mata Kuliah',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Detail catatan akan ditampilkan di sini',
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _notes.length,
+                itemBuilder: (context, index) {
+                  final note = _notes[index];
+                  final color = _getCourseColor(index);
+                  final initial = (note['name'] as String).isNotEmpty
+                      ? (note['name'] as String)[0].toUpperCase()
+                      : '?';
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.08),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _courses.length,
-                    itemBuilder: (context, index) {
-                      final course = _courses[index];
-                      final color = _getCourseColor(index);
-                      final initial = (course['name'] as String).isNotEmpty
-                          ? (course['name'] as String)[0].toUpperCase()
-                          : '?';
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.08),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      leading: Icon(Icons.circle, size: 10, color: color),
+                      title: Text(
+                        note['name'] ?? '',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 2),
+                          Text(
+                            note['code'] ?? '',
+                            style: const TextStyle(
+                              color: Color(0xFF3B82F6),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                          if (note['description'] != null &&
+                              note['description'].isNotEmpty)
+                            Text(
+                              note['description'],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey,
+                      ),
+                      onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: Text(note['title'] ?? ''),
+                          content: Text(
+                            note['description'] ??
+                                'Tidak ada isi catatan',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Tutup'),
                             ),
                           ],
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          leading: CircleAvatar(
-                            radius: 22,
-                            backgroundColor: color,
-                            child: Text(
-                              initial,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            course['name'] ?? '',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 2),
-                              Text(
-                                course['code'] ?? '',
-                                style: const TextStyle(
-                                  color: Color(0xFF3B82F6),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              if (course['description'] != null &&
-                                  course['description'].isNotEmpty)
-                                Text(
-                                  course['description'],
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
-                          ),
-                          trailing: const Icon(
-                            Icons.chevron_right,
-                            color: Colors.grey,
-                          ),
-                          onTap: () {
-                            // TODO: navigasi ke detail catatan mata kuliah
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Fitur detail mata kuliah sedang dikembangkan'),
-                                duration: Duration(seconds: 1),
-                              ),
-                            );
-                          },
-                        ),
                       );
                     },
-                  ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }

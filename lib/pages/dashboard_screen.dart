@@ -4,8 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:noteshare_flutter/api.config.dart';
 import 'package:noteshare_flutter/semester_state.dart';
 import 'package:noteshare_flutter/widgets/app_drawer.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:noteshare_flutter/pages/notification_page.dart';
+import 'package:noteshare_flutter/pages/semester_detail_page.dart';
+import 'package:noteshare_flutter/pages/note_plan_page.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -94,13 +95,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (_) {
     } finally {
       if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _openNote(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -386,7 +380,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: _SemesterCard(
                                 item: item,
                                 onDelete: () => _deleteSemester(item),
-                                onOpenNote: _openNote,
                               ),
                             ),
                           ),
@@ -471,76 +464,77 @@ class _DashboardHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Row(
-              children: [
-                GestureDetector(
-                onTap: () => scaffoldKey.currentState?.openDrawer(),
-                child: const Icon(
-                  Icons.menu_rounded,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
-
-                const SizedBox(width: 15),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(('DASHBOARD'),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      Text(
-                        userName.isNotEmpty ? 'Halo, $userName!' : 'Halo!',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const NotificationPage(),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.40),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => scaffoldKey.currentState?.openDrawer(),
+                    child: const Icon(
+                      Icons.menu_rounded,
+                      color: Colors.white,
+                      size: 30,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.notifications_outlined,
-                    color: Color.fromARGB(255, 98, 98, 99),
-                    size: 25,
+
+                  const SizedBox(width: 15),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          ('DASHBOARD'),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        Text(
+                          userName.isNotEmpty ? 'Halo, $userName!' : 'Halo!',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationPage(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.40),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        color: Color.fromARGB(255, 98, 98, 99),
+                        size: 25,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _line(double w) => Container(
@@ -558,11 +552,11 @@ class _DashboardHeader extends StatelessWidget {
 class _SemesterCard extends StatefulWidget {
   final SemesterItem item;
   final VoidCallback onDelete;
-  final Future<void> Function(String url) onOpenNote;
+
   const _SemesterCard({
     required this.item,
     required this.onDelete,
-    required this.onOpenNote,
+    
   });
 
   @override
@@ -595,6 +589,7 @@ class _SemesterCardState extends State<_SemesterCard> {
         children: [
           GestureDetector(
             onTap: () => setState(() => _expanded = !_expanded),
+
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
@@ -690,7 +685,17 @@ class _SemesterCardState extends State<_SemesterCard> {
                           (note) => _NoteRow(
                             note: note,
                             accentColor: widget.item.color,
-                            onTap: () => widget.onOpenNote(note.fileUrl),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SemesterDetailPage(
+                                    semesterName: note.title,
+                                    semesterNumber: 0,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         )
                         .toList(),
@@ -743,24 +748,8 @@ class _NoteRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                  note.title.isNotEmpty
-                      ? note.title[0].toUpperCase()
-                      : "N",
-                  style: TextStyle(
-                    color: accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                ),
+                Icon(Icons.circle, size: 8, color: accentColor),
+
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -788,23 +777,22 @@ class _NoteRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.chevron_right,
+                    color: accentColor,
+                    size: 18,
+                  ),
                 ),
-                child: Icon(
-                  Icons.chevron_right,
-                  color: accentColor,
-                  size: 18,
-                ),
-              ),
               ],
             ),
           ),
@@ -827,7 +815,16 @@ class _NoteRow extends StatelessWidget {
 class _BottomBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotePlanPage(),
+        ),
+      );
+    },
+  child: Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -877,6 +874,7 @@ class _BottomBanner extends StatelessWidget {
           ),
         ],
       ),
+  ),
     );
   }
 }

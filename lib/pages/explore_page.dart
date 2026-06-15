@@ -19,7 +19,11 @@ class _ExplorePageState extends State<ExplorePage> {
   bool _loading = true;
   // Map dari course name → list notes
   Map<String, List<Map<String, dynamic>>> _grouped = {};
-  Set<int> _bookmarked = {};
+Map<String, List<Map<String, dynamic>>> _filteredGrouped = {};
+
+Set<int> _bookmarked = {};
+
+String _searchQuery = '';
 
   // Warna cycle untuk course
   static const _colorCycle = [
@@ -43,6 +47,7 @@ class _ExplorePageState extends State<ExplorePage> {
       final token = await AuthStorage.getToken();
       final res = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/notes?limit=100'),
+        
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -60,7 +65,10 @@ class _ExplorePageState extends State<ExplorePage> {
           grouped.putIfAbsent(courseName, () => []);
           grouped[courseName]!.add(note);
         }
-        setState(() => _grouped = grouped);
+        setState(() {
+  _grouped = grouped;
+  _filteredGrouped = grouped;
+});
       }
     } catch (_) {
     } finally {
@@ -78,6 +86,40 @@ class _ExplorePageState extends State<ExplorePage> {
     });
   }
 
+  void _filterNotes(String query) {
+  _searchQuery = query;
+
+  if (query.trim().isEmpty) {
+    setState(() {
+      _filteredGrouped = Map.from(_grouped);
+    });
+    return;
+  }
+
+  final Map<String, List<Map<String, dynamic>>> filtered = {};
+
+  _grouped.forEach((course, notes) {
+    final results = notes.where((note) {
+      final title =
+          (note['title'] ?? '').toString().toLowerCase();
+
+      final description =
+          (note['description'] ?? '').toString().toLowerCase();
+
+      return title.contains(query.toLowerCase()) ||
+          description.contains(query.toLowerCase());
+    }).toList();
+
+    if (results.isNotEmpty) {
+      filtered[course] = results;
+    }
+  });
+
+  setState(() {
+    _filteredGrouped = filtered;
+  });
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,7 +128,10 @@ class _ExplorePageState extends State<ExplorePage> {
       backgroundColor: const Color(0xFFF6F5FF),
       body: Column(
         children: [
-          _ExploreHeader(scaffoldKey: _scaffoldKey),
+          _ExploreHeader(
+  scaffoldKey: _scaffoldKey,
+  onSearch: _filterNotes,
+),
           Expanded(
             child: _loading
                 ? const Center(
@@ -95,11 +140,11 @@ class _ExplorePageState extends State<ExplorePage> {
                 : RefreshIndicator(
                     color: const Color(0xFF7B5FFF),
                     onRefresh: _fetchNotes,
-                    child: _grouped.isEmpty
+                    child: _filteredGrouped.isEmpty
                         ? _EmptyState()
                         : ListView(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                            children: _grouped.entries
+                            children: _filteredGrouped.entries
                                 .toList()
                                 .asMap()
                                 .entries
@@ -130,7 +175,12 @@ class _ExplorePageState extends State<ExplorePage> {
 
 class _ExploreHeader extends StatelessWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
-  const _ExploreHeader({required this.scaffoldKey});
+  final Function(String) onSearch;
+
+  const _ExploreHeader({
+    required this.scaffoldKey,
+    required this.onSearch,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +282,8 @@ class _ExploreHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: TextField(
-                decoration: InputDecoration(
+  onChanged: onSearch,
+  decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Cari catatan...',
                   hintStyle: TextStyle(
@@ -513,18 +564,14 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.search_outlined, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            'Belum ada catatan publik',
+            'Belum ada catatan',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey.shade500,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Jadilah yang pertama berbagi!',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-          ),
+          
         ],
       ),
     );
